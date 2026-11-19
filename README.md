@@ -40,3 +40,5 @@ Built for the [gta6-cover-art-01 bounty](https://make.fun/bounty/gta6-cover-art-
 on make.fun. Original work: no Rockstar logo, wordmark, artwork, character or
 font is used. The display font is Anton under the SIL Open Font License 1.1
 (see `app/fonts/OFL.txt`).
+
+<!-- Sample photos: an illustrated character set (cel-shaded GTA-poster style) — no photographs. -->

@@ -11,6 +11,8 @@ const SAMPLE_PHOTOS = [
   { name: 'Pier', src: 'samples/pier.jpg' },
 ];
 
+// The samples are an illustrated character set: cel-shaded poster art, no photographs.
+
 const EXPORT_SIZES = {
   '1080x1080': { w: 1080, h: 1080, label: '1080 × 1080' },
   '1080x1350': { w: 1080, h: 1350, label: '1080 × 1350' },

@@ -5,9 +5,9 @@
 // /output/dossier.json, the summary the judge reads, with the vendored make.fun library.
 // The editor itself: four multi-panel layouts, five Vice City colour grades, drag-to-pan photo
 // cropping per panel, bold Anton lettering, and one-click PNG export at 1080x1080, 1080x1350
-// and 1920x1080. The two starter sample photos (app/samples/boulevard.jpg, pier.jpg) were made
-// for make.fun with an image model and are free to use; neon.jpg and beach.jpg are extra
-// samples made the same way for this entry.
+// and 1920x1080. The four sample photos (app/samples/neon.jpg, boulevard.jpg, pier.jpg,
+// beach.jpg) are illustrated character art made with an image model for this entry —
+// cel-shaded GTA-poster style, no photographs of real people.
 //
 // Serve it locally with `node serve.ts`, then open http://localhost:8080.
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:

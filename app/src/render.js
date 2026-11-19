@@ -1,7 +1,8 @@
 // VICEFRAME cover renderer: layouts, colour grades, effects and caption
 // lettering, all drawn on a 2D canvas. Pure functions of the editor state —
 // the same code draws the live preview and the exported PNG, so what you see
-// is exactly what you share.
+// is exactly what you share. The built-in samples are illustrated characters
+// in the same cel-shaded poster style, never photographs.
 
 /** Panel layouts: each one maps the cover size to its panel rectangles. */
 export const LAYOUTS = {
