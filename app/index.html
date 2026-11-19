@@ -1,23 +1,147 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cover Snap</title>
-<link rel="stylesheet" href="./style.css">
+<title>VICEFRAME — GTA-style Cover Art Maker</title>
+<link rel="icon" href="favicon.ico">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<main class="app">
-  <section class="controls">
-    <h1>Cover Snap</h1>
-    <p>A photo and a caption, made into a square cover.</p>
-    <label>Photo <input id="photo" type="file" accept="image/*"></label>
-    <label>Caption <input id="caption" type="text" maxlength="40" value="Sunset Heist"></label>
-    <button id="export" type="button">Export PNG 1080 x 1080</button>
-    <p id="status" role="status"></p>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">VF</span>
+    <span class="brand-name">VICEFRAME</span>
+    <span class="brand-tag">GTA-style cover art maker</span>
+  </div>
+  <div class="top-actions">
+    <button id="surpriseBtn" class="btn btn-ghost" type="button">Surprise me</button>
+    <button id="exportBtn" class="btn btn-primary" type="button">Export PNG</button>
+  </div>
+</header>
+
+<main class="workspace">
+  <aside class="panel" id="controls">
+    <section class="group">
+      <h2>Photos</h2>
+      <p class="hint">Pick a photo, then click a panel on the cover to put it there. Your photos never leave this browser.</p>
+      <div class="thumbs" id="photoThumbs"></div>
+      <div class="row">
+        <label class="btn btn-ghost file-btn" for="uploadInput">Upload photos</label>
+        <input id="uploadInput" type="file" accept="image/*" multiple hidden>
+        <button id="fillAllBtn" class="btn btn-ghost" type="button">Fill all panels</button>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2>Layout</h2>
+      <div class="layout-grid" id="layoutBtns">
+        <button type="button" data-layout="hero-strip" class="layout-btn is-active" aria-label="Hero panel plus strip">
+          <svg viewBox="0 0 60 44" aria-hidden="true"><rect x="2" y="2" width="56" height="26" rx="2"/><rect x="2" y="30" width="17" height="12" rx="2"/><rect x="21" y="30" width="17" height="12" rx="2"/><rect x="40" y="30" width="18" height="12" rx="2"/></svg>
+          <span>Hero + strip</span>
+        </button>
+        <button type="button" data-layout="poster-split" class="layout-btn" aria-label="Poster split">
+          <svg viewBox="0 0 60 44" aria-hidden="true"><rect x="2" y="2" width="33" height="40" rx="2"/><rect x="37" y="2" width="21" height="19" rx="2"/><rect x="37" y="23" width="21" height="19" rx="2"/></svg>
+          <span>Poster split</span>
+        </button>
+        <button type="button" data-layout="triptych" class="layout-btn" aria-label="Triptych">
+          <svg viewBox="0 0 60 44" aria-hidden="true"><rect x="2" y="2" width="17" height="40" rx="2"/><rect x="21" y="2" width="17" height="40" rx="2"/><rect x="40" y="2" width="18" height="40" rx="2"/></svg>
+          <span>Triptych</span>
+        </button>
+        <button type="button" data-layout="quad" class="layout-btn" aria-label="Quad">
+          <svg viewBox="0 0 60 44" aria-hidden="true"><rect x="2" y="2" width="27" height="19" rx="2"/><rect x="31" y="2" width="27" height="19" rx="2"/><rect x="2" y="23" width="27" height="19" rx="2"/><rect x="31" y="23" width="27" height="19" rx="2"/></svg>
+          <span>Quad</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2>Export size</h2>
+      <div class="seg" id="sizeBtns">
+        <button type="button" data-size="1080x1080" class="seg-btn">1080 × 1080</button>
+        <button type="button" data-size="1080x1350" class="seg-btn">1080 × 1350</button>
+        <button type="button" data-size="1920x1080" class="seg-btn is-active">1920 × 1080</button>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2>Colour grade</h2>
+      <div class="grade-grid" id="gradeBtns">
+        <button type="button" data-grade="sunset" class="grade-btn is-active"><span class="swatch" style="background:linear-gradient(135deg,#ff9a3c,#ff2e63)"></span>Sunset</button>
+        <button type="button" data-grade="neon" class="grade-btn"><span class="swatch" style="background:linear-gradient(135deg,#ff2ea6,#22d3ee)"></span>Neon Night</button>
+        <button type="button" data-grade="ocean" class="grade-btn"><span class="swatch" style="background:linear-gradient(135deg,#0ea5b7,#1d4ed8)"></span>Ocean Drive</button>
+        <button type="button" data-grade="pastel" class="grade-btn"><span class="swatch" style="background:linear-gradient(135deg,#f9a8d4,#c4b5fd)"></span>Pastel Vice</button>
+        <button type="button" data-grade="noir" class="grade-btn"><span class="swatch" style="background:linear-gradient(135deg,#e5e5e5,#111111)"></span>Mono Noir</button>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2>Effects</h2>
+      <div class="chips" id="effectChips">
+        <button type="button" data-effect="vignette" class="chip is-on">Vignette</button>
+        <button type="button" data-effect="grain" class="chip is-on">Film grain</button>
+        <button type="button" data-effect="halftone" class="chip">Halftone</button>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2>Caption</h2>
+      <label class="field">
+        <span>Title</span>
+        <input id="titleInput" type="text" value="VICE CITY" maxlength="24" autocomplete="off">
+      </label>
+      <label class="field">
+        <span>Subtitle</span>
+        <input id="subtitleInput" type="text" value="SUMMER IN THE SUN" maxlength="40" autocomplete="off">
+      </label>
+      <label class="field">
+        <span>Title size</span>
+        <input id="titleSize" type="range" min="60" max="160" value="100">
+      </label>
+      <div class="field">
+        <span>Position</span>
+        <div class="seg" id="posBtns">
+          <button type="button" data-pos="top" class="seg-btn">Top</button>
+          <button type="button" data-pos="center" class="seg-btn">Centre</button>
+          <button type="button" data-pos="bottom" class="seg-btn is-active">Bottom</button>
+        </div>
+      </div>
+      <div class="field">
+        <span>Lettering colour</span>
+        <div class="colors" id="colorBtns">
+          <button type="button" data-color="#ffffff" class="color-btn is-active" style="background:#ffffff" aria-label="White"></button>
+          <button type="button" data-color="#ffd166" class="color-btn" style="background:#ffd166" aria-label="Gold"></button>
+          <button type="button" data-color="#ff5ea8" class="color-btn" style="background:#ff5ea8" aria-label="Hot pink"></button>
+          <button type="button" data-color="#67e8f9" class="color-btn" style="background:#67e8f9" aria-label="Cyan"></button>
+          <button type="button" data-color="#a3e635" class="color-btn" style="background:#a3e635" aria-label="Lime"></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2>Selected panel</h2>
+      <p class="hint" id="panelLabel">Panel 1 — Boulevard</p>
+      <label class="field">
+        <span>Zoom</span>
+        <input id="zoomInput" type="range" min="100" max="250" value="100">
+      </label>
+      <label class="field">
+        <span>Rotate</span>
+        <input id="rotateInput" type="range" min="-25" max="25" value="0">
+      </label>
+      <button id="resetCropBtn" class="btn btn-ghost" type="button">Reset this panel's crop</button>
+    </section>
+  </aside>
+
+  <section class="stage">
+    <div class="canvas-wrap">
+      <canvas id="previewCanvas" width="1920" height="1080"></canvas>
+    </div>
+    <p class="stage-hint">Click a panel to select it, then drag on it to move the photo. Pick a photo on the left to drop it into the selected panel.</p>
+    <p class="stage-note">Works fully offline — photos are read on your machine only. Display font: Anton (SIL Open Font License).</p>
   </section>
-  <canvas id="cover" width="1080" height="1080" aria-label="The cover"></canvas>
 </main>
-<script type="module" src="./src/main.js"></script>
+
+<script type="module" src="src/editor.js"></script>
 </body>
 </html>
