@@ -3,11 +3,15 @@
 // (app/index.html and its vanilla ES modules, no library and no network request). This program
 // hands it in: it copies app/ and screenshots/ from beside this file to /output and writes
 // /output/dossier.json, the summary the judge reads, with the vendored make.fun library.
-// The editor itself: four multi-panel layouts, five Vice City colour grades, drag-to-pan photo
-// cropping per panel, bold Anton lettering, and one-click PNG export at 1080x1080, 1080x1350
-// and 1920x1080. The four sample photos (app/samples/neon.jpg, boulevard.jpg, pier.jpg,
-// beach.jpg) are illustrated character art made with an image model for this entry —
-// cel-shaded GTA-poster style, no photographs of real people.
+// The editor itself: eight multi-panel layouts (including slanted key-art
+// panels, a full-bleed hero and a six-panel comic grid), seven Vice City
+// colour grades, one-click title presets, face-aware cropping, a five-star
+// wanted decoration, drag-to-pan photo cropping per panel, bold Anton
+// lettering, and one-click PNG export at 1080x1080, 1080x1350, 1080x1920
+// and 1920x1080. The eight sample photos (app/samples/neon.jpg,
+// boulevard.jpg, pier.jpg, beach.jpg, heist.jpg, chase.jpg, club.jpg,
+// biker.jpg) are illustrated character art made with an image model for this
+// entry — cel-shaded GTA-poster style, no photographs of real people.
 //
 // Serve it locally with `node serve.ts`, then open http://localhost:8080.
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:

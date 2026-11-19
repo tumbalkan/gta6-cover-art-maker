@@ -9,19 +9,26 @@ art — entirely offline, in your browser. No uploads, no account, no build step
 
 ## What it does
 
-- **Multi-panel posters** — four layouts: Hero + strip, Poster split, Triptych
-  and Quad. Fill several panels with one photo or a different photo per panel.
+- **Multi-panel posters** — eight layouts: Hero + strip, Poster split,
+  Triptych, Quad, Slanted (diagonal dividers like GTA 6 key art), Key-art
+  slash (title slashed across the art), Full-bleed hero and a six-panel Comic
+  grid. Fill several panels with one photo or a different photo per panel.
 - **Any photo** — drop in your own photos (read on your machine only) or use
-  the four built-in Vice City samples. Click a panel to select it, drag to pan
-  the photo, zoom and rotate with sliders.
+  the eight built-in Vice City samples: neon street, boulevard, beach, pier,
+  heist crew, getaway chase, nightclub and biker. Click a panel to select it,
+  drag to pan the photo, zoom and rotate with sliders. When the browser
+  supports face detection, auto-fill centres the subject's face in its panel.
 - **Bold lettering** — big display type (Anton, SIL Open Font License) with
   outline, drop shadow and an auto-fit that never overflows the cover. Title,
-  subtitle, size, position and colour are all editable.
-- **Vice City grades** — five colour grades: Sunset, Neon Night, Ocean Drive,
-  Pastel Vice and Mono Noir, plus vignette, film grain and halftone effects.
-- **One-click export** — PNG at 1080 × 1080, 1080 × 1350 or 1920 × 1080.
-  The live preview is rendered by the same code as the export, so what you see
-  is exactly what you share.
+  subtitle, size, position and colour are all editable. One-click presets
+  (Vice City, Heist Crew, Getaway, Neon Nights, Wanted, Outlaw Run) set the
+  caption, grade and five-star wanted decoration together.
+- **Vice City grades** — seven colour grades: Sunset, Neon Night, Ocean Drive,
+  Pastel Vice, Mono Noir, Heist (teal-orange cinematic) and Midnight, plus
+  vignette, film grain and halftone effects.
+- **One-click export** — PNG at 1080 × 1080, 1080 × 1350, 1080 × 1920 or
+  1920 × 1080. The live preview is rendered by the same code as the export,
+  so what you see is exactly what you share.
 
 ## Run it
 

@@ -1,8 +1,10 @@
-// VICEFRAME cover renderer: layouts, colour grades, effects and caption
-// lettering, all drawn on a 2D canvas. Pure functions of the editor state —
-// the same code draws the live preview and the exported PNG, so what you see
-// is exactly what you share. The built-in samples are illustrated characters
-// in the same cel-shaded poster style, never photographs.
+// VICEFRAME cover renderer: eight layouts (including slanted key-art panels
+// and a six-panel comic grid), seven colour grades, effects, caption
+// lettering and the five-star wanted decoration, all drawn on a 2D canvas.
+// Pure functions of the editor state — the same code draws the live preview
+// and the exported PNG, so what you see is exactly what you share. The
+// built-in samples are illustrated characters in the same cel-shaded poster
+// style, never photographs.
 
 /** Panel layouts: each one maps the cover size to its panel rectangles. */
 export const LAYOUTS = {
@@ -63,6 +65,90 @@ export const LAYOUTS = {
       ];
     },
   },
+  slanted: {
+    label: 'Slanted',
+    panelCount: 3,
+    rects(w, h, gap) {
+      // Diagonal dividers, GTA key-art style: each panel is a quadrilateral
+      // whose inner edge leans. poly holds the absolute clip points; x/y/w/h
+      // are the panel's bounding box, which the photo cover-fits into.
+      const s = Math.round(w * 0.07);
+      const t1 = Math.round(w / 3);
+      const t2 = Math.round((w * 2) / 3);
+      const quad = (points) => {
+        const xs = points.map((p) => p[0]);
+        const ys = points.map((p) => p[1]);
+        const x = Math.min(...xs);
+        const y = Math.min(...ys);
+        return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y, poly: points };
+      };
+      return [
+        quad([[0, 0], [t1 + s - gap, 0], [t1 - s - gap, h], [0, h]]),
+        quad([[t1 + s + gap, 0], [t2 + s - gap, 0], [t2 - s - gap, h], [t1 - s + gap, h]]),
+        quad([[t2 + s + gap, 0], [w, 0], [w, h], [t2 - s + gap, h]]),
+      ];
+    },
+  },
+  'key-art': {
+    label: 'Key-art slash',
+    panelCount: 3,
+    // The whole caption block slashes across the cover at this angle.
+    titleAngle: -3,
+    rects(w, h, gap) {
+      // One big slanted hero on the left, two stacked panels on the right,
+      // with the divider leaning from the top to the bottom of the cover.
+      const s = Math.round(w * 0.06);
+      const split = Math.round(w * 0.6);
+      const mid = Math.round(h / 2);
+      const slantX = (y) => split + s - ((2 * s * y) / h);
+      const quad = (points) => {
+        const xs = points.map((p) => p[0]);
+        const ys = points.map((p) => p[1]);
+        const x = Math.min(...xs);
+        const y = Math.min(...ys);
+        return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y, poly: points };
+      };
+      return [
+        quad([[0, 0], [slantX(0) - gap, 0], [slantX(h) - gap, h], [0, h]]),
+        quad([[slantX(0) + gap, 0], [w, 0], [w, mid - gap], [slantX(mid - gap) + gap, mid - gap]]),
+        quad([[slantX(mid + gap) + gap, mid + gap], [w, mid + gap], [w, h], [slantX(h) + gap, h]]),
+      ];
+    },
+  },
+  'full-bleed': {
+    label: 'Full-bleed hero',
+    panelCount: 1,
+    rects(w, h) {
+      return [{ x: 0, y: 0, w, h }];
+    },
+  },
+  'comic-grid': {
+    label: 'Comic grid',
+    panelCount: 6,
+    rects(w, h, gap) {
+      // Six panels: 3 columns by 2 rows in landscape, 2 by 3 in portrait.
+      const cols = w >= h ? 3 : 2;
+      const rows = w >= h ? 2 : 3;
+      const rects = [];
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const x0 = Math.round((w * c) / cols);
+          const x1 = c === cols - 1 ? w : Math.round((w * (c + 1)) / cols);
+          const y0 = Math.round((h * r) / rows);
+          const y1 = r === rows - 1 ? h : Math.round((h * (r + 1)) / rows);
+          const x = x0 + (c === 0 ? 0 : gap);
+          const y = y0 + (r === 0 ? 0 : gap);
+          rects.push({
+            x,
+            y,
+            w: x1 - (c === cols - 1 ? 0 : gap) - x,
+            h: y1 - (r === rows - 1 ? 0 : gap) - y,
+          });
+        }
+      }
+      return rects;
+    },
+  },
 };
 
 /** Colour grades: a canvas filter for the photos plus a tinted overlay. */
@@ -92,6 +178,16 @@ export const GRADES = {
     filter: 'grayscale(1) contrast(1.28) brightness(1.03)',
     overlay: null,
   },
+  heist: {
+    label: 'Heist',
+    filter: 'saturate(1.35) contrast(1.12) sepia(0.22) hue-rotate(-10deg)',
+    overlay: { from: '#0d9488', to: '#f97316', composite: 'soft-light', alpha: 0.5 },
+  },
+  midnight: {
+    label: 'Midnight',
+    filter: 'saturate(1.15) contrast(1.14) brightness(0.9) hue-rotate(16deg)',
+    overlay: { from: '#0c1e5e', to: '#312e81', composite: 'overlay', alpha: 0.42 },
+  },
 };
 
 /** Small deterministic PRNG so the film grain looks the same in preview and export. */
@@ -113,12 +209,53 @@ export function layoutPanelRects(layoutId, width, height) {
   return layout.rects(width, height, gap);
 }
 
+/** Does a canvas point fall inside a panel (polygon-aware for slanted panels)? */
+export function pointInPanel(point, rect) {
+  if (!rect.poly) {
+    return point.x >= rect.x && point.x <= rect.x + rect.w && point.y >= rect.y && point.y <= rect.y + rect.h;
+  }
+  // Ray casting over the panel's polygon.
+  let inside = false;
+  const pts = rect.poly;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const [xi, yi] = pts[i];
+    const [xj, yj] = pts[j];
+    if ((yi > point.y) !== (yj > point.y) && point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+/** Trace a panel's outline (polygon or rectangle) onto a path for stroking. */
+export function tracePanelPath(ctx, rect) {
+  ctx.beginPath();
+  if (rect.poly) {
+    rect.poly.forEach(([px, py], i) => {
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    ctx.closePath();
+  } else {
+    ctx.rect(rect.x, rect.y, rect.w, rect.h);
+  }
+}
+
 /** Draw one photo into its panel: cover-fit, with the panel's zoom, rotation and pan. */
 function drawPhotoPanel(ctx, image, rect, crop, filter) {
   const { x, y, w, h } = rect;
   ctx.save();
   ctx.beginPath();
-  ctx.rect(x, y, w, h);
+  if (rect.poly) {
+    // Slanted panel: clip to its quadrilateral instead of its bounding box.
+    rect.poly.forEach(([px, py], i) => {
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    ctx.closePath();
+  } else {
+    ctx.rect(x, y, w, h);
+  }
   ctx.clip();
   if (!image || !image.naturalWidth) {
     const fallback = ctx.createLinearGradient(x, y, x + w, y + h);
@@ -234,6 +371,16 @@ function drawCaptionLettering(ctx, width, height, state) {
   else if (state.titlePos === 'center') blockTop = height / 2 - blockHeight / 2;
   else blockTop = height * 0.96 - blockHeight;
 
+  // Key-art layouts slash the whole caption block at an angle, GTA key-art style.
+  const layout = LAYOUTS[state.layout] || LAYOUTS['hero-strip'];
+  const angle = ((layout.titleAngle || 0) * Math.PI) / 180;
+  ctx.save();
+  if (angle) {
+    ctx.translate(width / 2, height / 2);
+    ctx.rotate(angle);
+    ctx.translate(-width / 2, -height / 2);
+  }
+
   // Soft dark scrim behind the lettering so it reads over any photo.
   const scrimTop = Math.max(0, blockTop - size * 0.35);
   const scrimBottom = Math.min(height, blockTop + blockHeight + size * 0.35);
@@ -270,6 +417,47 @@ function drawCaptionLettering(ctx, width, height, state) {
     try { ctx.letterSpacing = '0px'; } catch (err) { /* ignore */ }
   }
   ctx.restore();
+  ctx.restore();
+}
+
+/** Five gold wanted stars in the top-right corner, GTA style. */
+function drawWantedStars(ctx, width) {
+  const starR = Math.max(14, Math.round(width * 0.024));
+  const gap = starR * 0.35;
+  const margin = Math.round(width * 0.025);
+  const total = starR * 2 * 5 + gap * 4;
+  let cx = width - margin - total + starR;
+  const cy = margin + starR;
+  ctx.save();
+  for (let i = 0; i < 5; i++) {
+    drawStar(ctx, cx, cy, starR);
+    cx += starR * 2 + gap;
+  }
+  ctx.restore();
+}
+
+/** One five-pointed star: gold fill, dark outline, soft shadow. */
+function drawStar(ctx, cx, cy, r) {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const radius = i % 2 === 0 ? r : r * 0.45;
+    const a = (Math.PI / 5) * i - Math.PI / 2;
+    const px = cx + radius * Math.cos(a);
+    const py = cy + radius * Math.sin(a);
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = r * 0.3;
+  ctx.shadowOffsetY = r * 0.12;
+  ctx.fillStyle = '#ffd166';
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.lineWidth = Math.max(1.5, r * 0.14);
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#101014';
+  ctx.stroke();
 }
 
 /**
@@ -293,5 +481,6 @@ export function renderCover(canvas, state, width, height) {
   if (state.effects && state.effects.halftone) drawHalftone(ctx, width, height);
   if (state.effects && state.effects.grain) drawFilmGrain(ctx, width, height);
   drawCaptionLettering(ctx, width, height, state);
+  if (state.wanted) drawWantedStars(ctx, width);
   return rects;
 }

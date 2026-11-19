@@ -2,13 +2,17 @@
 // owns the photo library (built-in samples plus the user's uploads), panel
 // selection with drag-to-pan cropping, and one-click PNG export.
 
-import { LAYOUTS, GRADES, renderCover, layoutPanelRects } from './render.js';
+import { LAYOUTS, GRADES, renderCover, layoutPanelRects, pointInPanel, tracePanelPath } from './render.js';
 
 const SAMPLE_PHOTOS = [
   { name: 'Neon Street', src: 'samples/neon.jpg' },
   { name: 'Boulevard', src: 'samples/boulevard.jpg' },
   { name: 'Beach', src: 'samples/beach.jpg' },
   { name: 'Pier', src: 'samples/pier.jpg' },
+  { name: 'Heist Crew', src: 'samples/heist.jpg' },
+  { name: 'Getaway', src: 'samples/chase.jpg' },
+  { name: 'Nightclub', src: 'samples/club.jpg' },
+  { name: 'Biker', src: 'samples/biker.jpg' },
 ];
 
 // The samples are an illustrated character set: cel-shaded poster art, no photographs.
@@ -16,6 +20,7 @@ const SAMPLE_PHOTOS = [
 const EXPORT_SIZES = {
   '1080x1080': { w: 1080, h: 1080, label: '1080 × 1080' },
   '1080x1350': { w: 1080, h: 1350, label: '1080 × 1350' },
+  '1080x1920': { w: 1080, h: 1920, label: '1080 × 1920' },
   '1920x1080': { w: 1920, h: 1080, label: '1920 × 1080' },
 };
 
@@ -25,6 +30,20 @@ const SURPRISE_TITLES = [
   ['PALM HEAT', 'WHERE THE SUN NEVER SETS'],
   ['SUNSET RUN', 'TOP DOWN, FULL SEND'],
   ['VICE LIFE', 'EVERY NIGHT IS A POSTER'],
+  ['HEIST CREW', 'EVERY SCORE HAS A PRICE'],
+  ['GETAWAY', 'TOP DOWN, FULL SEND'],
+  ['WANTED', 'FIVE STARS AND COUNTING'],
+  ['OUTLAW RUN', 'RIDE OR DIE IN VICE CITY'],
+];
+
+/** One-click title presets: title, subtitle, grade and wanted stars in one tap. */
+const PRESETS = [
+  { id: 'vice-city', label: 'Vice City', title: 'VICE CITY', subtitle: 'SUMMER IN THE SUN', grade: 'sunset', wanted: false },
+  { id: 'heist-crew', label: 'Heist Crew', title: 'HEIST CREW', subtitle: 'EVERY SCORE HAS A PRICE', grade: 'heist', wanted: true },
+  { id: 'getaway', label: 'Getaway', title: 'GETAWAY', subtitle: 'TOP DOWN, FULL SEND', grade: 'ocean', wanted: true },
+  { id: 'neon-nights', label: 'Neon Nights', title: 'NEON NIGHTS', subtitle: 'OCEAN DRIVE AFTER DARK', grade: 'neon', wanted: false },
+  { id: 'wanted', label: 'Wanted', title: 'WANTED', subtitle: 'FIVE STARS AND COUNTING', grade: 'midnight', wanted: true },
+  { id: 'outlaw-run', label: 'Outlaw Run', title: 'OUTLAW RUN', subtitle: 'RIDE OR DIE IN VICE CITY', grade: 'sunset', wanted: false },
 ];
 
 /** The editor's whole state: one object the renderer reads. */
@@ -37,9 +56,10 @@ const state = {
   titleSize: 100,
   titlePos: 'bottom',
   titleColor: '#ffffff',
+  wanted: false,
   sizeId: '1920x1080',
   selectedPanel: 0,
-  panels: [0, 1, 2, 3].map(() => ({ photo: null, zoom: 1, rot: 0, dx: 0, dy: 0 })),
+  panels: [0, 1, 2, 3, 4, 5].map(() => ({ photo: null, zoom: 1, rot: 0, dx: 0, dy: 0 })),
 };
 
 /** Every photo the editor knows: built-in samples first, uploads appended. */
@@ -66,6 +86,61 @@ function defaultCrop() {
   return { zoom: 1, rot: 0, dx: 0, dy: 0 };
 }
 
+/** Detect the largest face in an image with the browser's FaceDetector API.
+ *  Returns the face box in image pixels, or null when the API is missing
+ *  (headless browsers, older browsers), the detector throws, or no face is
+ *  found. Never throws and never logs: the caller falls back to a centre crop. */
+let faceDetector = null;
+let faceDetectorTried = false;
+function detectFace(image) {
+  if (faceDetectorTried && !faceDetector) return Promise.resolve(null);
+  if (!faceDetector) {
+    faceDetectorTried = true;
+    try {
+      if (typeof FaceDetector === 'undefined') return Promise.resolve(null);
+      faceDetector = new FaceDetector({ fastMode: true });
+    } catch (err) {
+      return Promise.resolve(null);
+    }
+  }
+  return faceDetector.detect(image).then((faces) => {
+    if (!faces || faces.length === 0) return null;
+    // Largest face wins: it is the subject.
+    return faces.reduce((big, face) => {
+      const box = face.boundingBox;
+      const area = box.width * box.height;
+      const bigBox = big.boundingBox;
+      return area > bigBox.width * bigBox.height ? face : big;
+    }).boundingBox;
+  }).catch(() => null);
+}
+
+/** Pan a panel's crop so a detected face sits at the panel's centre. */
+function centerFaceInPanel(panelIndex, image, faceBox) {
+  const rect = currentRects[panelIndex];
+  if (!rect || !image || !image.naturalWidth) return;
+  const panel = state.panels[panelIndex];
+  if (!panel || panel.photo !== image) return;
+  const base = Math.max(rect.w / image.naturalWidth, rect.h / image.naturalHeight);
+  const scale = base * (panel.zoom || 1);
+  const dw = image.naturalWidth * scale;
+  const dh = image.naturalHeight * scale;
+  const fx = (faceBox.x + faceBox.width / 2) / image.naturalWidth;
+  const fy = (faceBox.y + faceBox.height / 2) / image.naturalHeight;
+  // The renderer clamps the pan to the photo's real overflow, so the ideal
+  // pan is safe to set even when the face sits near an edge.
+  panel.dx = (0.5 - fx) * (dw / rect.w);
+  panel.dy = (0.5 - fy) * (dh / rect.h);
+  render();
+}
+
+/** After a photo lands in a panel, centre its face when one is detected. */
+function faceCenterPhoto(panelIndex, image) {
+  detectFace(image).then((faceBox) => {
+    if (faceBox) centerFaceInPanel(panelIndex, image, faceBox);
+  });
+}
+
 /** Draw the cover, then outline the selected panel on the preview only. */
 function render() {
   const size = EXPORT_SIZES[state.sizeId];
@@ -76,7 +151,8 @@ function render() {
     previewCtx.strokeStyle = '#22d3ee';
     previewCtx.lineWidth = Math.max(3, size.w * 0.004);
     previewCtx.setLineDash([size.w * 0.012, size.w * 0.008]);
-    previewCtx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+    tracePanelPath(previewCtx, rect);
+    previewCtx.stroke();
     previewCtx.restore();
   }
 }
@@ -103,12 +179,14 @@ function assignPhotoToSelected(libraryIndex) {
   const entry = library[libraryIndex];
   if (!entry) return;
   pickedPhoto = libraryIndex;
-  state.panels[state.selectedPanel] = { photo: entry.image, ...defaultCrop() };
+  const panelIndex = state.selectedPanel;
+  state.panels[panelIndex] = { photo: entry.image, ...defaultCrop() };
   document.querySelectorAll('.thumb').forEach((el, i) => {
     el.classList.toggle('is-picked', i === libraryIndex);
   });
   refreshPanelControls();
   render();
+  faceCenterPhoto(panelIndex, entry.image);
 }
 
 /** Fill every panel of the current layout with the picked photo. */
@@ -117,6 +195,20 @@ function fillAllPanels() {
   if (!entry) return;
   state.panels = state.panels.map(() => ({ photo: entry.image, ...defaultCrop() }));
   refreshPanelControls();
+  render();
+  const count = (LAYOUTS[state.layout] || LAYOUTS['hero-strip']).panelCount;
+  for (let i = 0; i < count; i++) faceCenterPhoto(i, entry.image);
+}
+
+/** Apply a title preset: caption, grade and wanted stars in one tap. */
+function applyPreset(presetId) {
+  const preset = PRESETS.find((p) => p.id === presetId);
+  if (!preset) return;
+  state.title = preset.title;
+  state.subtitle = preset.subtitle;
+  state.grade = preset.grade;
+  state.wanted = preset.wanted;
+  syncControls();
   render();
 }
 
@@ -175,6 +267,7 @@ function surpriseMe() {
   const [title, subtitle] = SURPRISE_TITLES[Math.floor(Math.random() * SURPRISE_TITLES.length)];
   state.title = title;
   state.subtitle = subtitle;
+  state.wanted = Math.random() < 0.3;
   state.panels = state.panels.map(() => {
     const entry = library[Math.floor(Math.random() * library.length)];
     return { photo: entry ? entry.image : null, ...defaultCrop() };
@@ -203,6 +296,7 @@ function syncControls() {
   document.querySelectorAll('#colorBtns .color-btn').forEach((el) => {
     el.classList.toggle('is-active', el.dataset.color === state.titleColor);
   });
+  $('wantedChip').classList.toggle('is-on', !!state.wanted);
   refreshPanelControls();
 }
 
@@ -233,11 +327,9 @@ function canvasPoint(event) {
   };
 }
 
-/** Which panel, if any, holds a canvas point. */
+/** Which panel, if any, holds a canvas point (polygon-aware for slanted panels). */
 function panelAt(point) {
-  return currentRects.findIndex(
-    (rect) => point.x >= rect.x && point.x <= rect.x + rect.w && point.y >= rect.y && point.y <= rect.y + rect.h,
-  );
+  return currentRects.findIndex((rect) => pointInPanel(point, rect));
 }
 
 function wirePointer() {
@@ -302,6 +394,14 @@ function wireControls() {
       el.classList.toggle('is-on', state.effects[key]);
       render();
     });
+  });
+  document.querySelectorAll('#presetBtns .preset-btn').forEach((el) => {
+    el.addEventListener('click', () => applyPreset(el.dataset.preset));
+  });
+  $('wantedChip').addEventListener('click', () => {
+    state.wanted = !state.wanted;
+    $('wantedChip').classList.toggle('is-on', state.wanted);
+    render();
   });
   $('titleInput').addEventListener('input', (event) => {
     state.title = event.target.value;
@@ -369,12 +469,15 @@ async function initEditor() {
   }
   // Default cover: neon street hero, boulevard / beach / pier in the strip.
   // The strip pans frame the faces, which sit near the top of those photos.
-  const order = [0, 1, 2, 3];
+  // Panels 5 and 6 (heist crew, getaway) wait for the six-panel comic grid.
+  const order = [0, 1, 2, 3, 4, 5];
   const defaultPans = [
     { dx: 0, dy: 0 },
     { dx: 0, dy: 0.35 },
     { dx: 0, dy: 0 },
     { dx: 0, dy: 0.18 },
+    { dx: 0, dy: 0 },
+    { dx: 0, dy: 0 },
   ];
   state.panels = state.panels.map((panel, i) => ({
     ...panel,
@@ -394,6 +497,6 @@ async function initEditor() {
 }
 
 // Automation hook for screenshots and testing: drive the editor from a script.
-window.__viceframe = { state, render, selectPanel, assignPhotoToSelected, exportCoverPNG, library };
+window.__viceframe = { state, render, selectPanel, assignPhotoToSelected, applyPreset, exportCoverPNG, library, PRESETS };
 
 initEditor();

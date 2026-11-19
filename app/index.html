@@ -53,6 +53,22 @@
           <svg viewBox="0 0 60 44" aria-hidden="true"><rect x="2" y="2" width="27" height="19" rx="2"/><rect x="31" y="2" width="27" height="19" rx="2"/><rect x="2" y="23" width="27" height="19" rx="2"/><rect x="31" y="23" width="27" height="19" rx="2"/></svg>
           <span>Quad</span>
         </button>
+        <button type="button" data-layout="slanted" class="layout-btn" aria-label="Slanted panels">
+          <svg viewBox="0 0 60 44" aria-hidden="true"><polygon points="2,2 26,2 20,42 2,42"/><polygon points="28,2 46,2 40,42 22,42"/><polygon points="48,2 58,2 58,42 42,42"/></svg>
+          <span>Slanted</span>
+        </button>
+        <button type="button" data-layout="key-art" class="layout-btn" aria-label="Key-art slash">
+          <svg viewBox="0 0 60 44" aria-hidden="true"><polygon points="2,2 38,2 32,42 2,42"/><polygon points="40,2 58,2 58,20 34,20"/><polygon points="34,22 58,22 58,42 32,42"/></svg>
+          <span>Key-art slash</span>
+        </button>
+        <button type="button" data-layout="full-bleed" class="layout-btn" aria-label="Full-bleed hero">
+          <svg viewBox="0 0 60 44" aria-hidden="true"><rect x="2" y="2" width="56" height="40" rx="2"/></svg>
+          <span>Full-bleed hero</span>
+        </button>
+        <button type="button" data-layout="comic-grid" class="layout-btn" aria-label="Comic grid">
+          <svg viewBox="0 0 60 44" aria-hidden="true"><rect x="2" y="2" width="17" height="19" rx="2"/><rect x="21" y="2" width="17" height="19" rx="2"/><rect x="40" y="2" width="18" height="19" rx="2"/><rect x="2" y="23" width="17" height="19" rx="2"/><rect x="21" y="23" width="17" height="19" rx="2"/><rect x="40" y="23" width="18" height="19" rx="2"/></svg>
+          <span>Comic grid</span>
+        </button>
       </div>
     </section>
 
@@ -61,6 +77,7 @@
       <div class="seg" id="sizeBtns">
         <button type="button" data-size="1080x1080" class="seg-btn">1080 × 1080</button>
         <button type="button" data-size="1080x1350" class="seg-btn">1080 × 1350</button>
+        <button type="button" data-size="1080x1920" class="seg-btn">1080 × 1920</button>
         <button type="button" data-size="1920x1080" class="seg-btn is-active">1920 × 1080</button>
       </div>
     </section>
@@ -73,6 +90,21 @@
         <button type="button" data-grade="ocean" class="grade-btn"><span class="swatch" style="background:linear-gradient(135deg,#0ea5b7,#1d4ed8)"></span>Ocean Drive</button>
         <button type="button" data-grade="pastel" class="grade-btn"><span class="swatch" style="background:linear-gradient(135deg,#f9a8d4,#c4b5fd)"></span>Pastel Vice</button>
         <button type="button" data-grade="noir" class="grade-btn"><span class="swatch" style="background:linear-gradient(135deg,#e5e5e5,#111111)"></span>Mono Noir</button>
+        <button type="button" data-grade="heist" class="grade-btn"><span class="swatch" style="background:linear-gradient(135deg,#0d9488,#f97316)"></span>Heist</button>
+        <button type="button" data-grade="midnight" class="grade-btn"><span class="swatch" style="background:linear-gradient(135deg,#0c1e5e,#312e81)"></span>Midnight</button>
+      </div>
+    </section>
+
+    <section class="group">
+      <h2>Presets</h2>
+      <p class="hint">One tap sets the title, subtitle, grade and wanted stars.</p>
+      <div class="preset-grid" id="presetBtns">
+        <button type="button" data-preset="vice-city" class="preset-btn">Vice City</button>
+        <button type="button" data-preset="heist-crew" class="preset-btn">Heist Crew</button>
+        <button type="button" data-preset="getaway" class="preset-btn">Getaway</button>
+        <button type="button" data-preset="neon-nights" class="preset-btn">Neon Nights</button>
+        <button type="button" data-preset="wanted" class="preset-btn">Wanted</button>
+        <button type="button" data-preset="outlaw-run" class="preset-btn">Outlaw Run</button>
       </div>
     </section>
 
@@ -82,6 +114,9 @@
         <button type="button" data-effect="vignette" class="chip is-on">Vignette</button>
         <button type="button" data-effect="grain" class="chip is-on">Film grain</button>
         <button type="button" data-effect="halftone" class="chip">Halftone</button>
+      </div>
+      <div class="chips chips-row" id="wantedRow">
+        <button type="button" id="wantedChip" class="chip">Wanted ★★★★★</button>
       </div>
     </section>
 

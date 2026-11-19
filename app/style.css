@@ -1,4 +1,4 @@
-/* VICEFRAME editor styles. The sample photos are illustrated characters (cel-shaded poster art). */
+/* VICEFRAME editor styles. Eight illustrated character samples (cel-shaded poster art). */
 @font-face {
   font-family: "Anton";
   src: url("fonts/Anton-Regular.ttf") format("truetype");
@@ -130,6 +130,9 @@ body {
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
   margin-bottom: 10px;
+  max-height: 190px;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .thumb {
@@ -191,9 +194,9 @@ body {
 }
 
 .layout-btn svg { width: 60px; height: 44px; }
-.layout-btn svg rect { fill: #3a3a4c; }
+.layout-btn svg rect, .layout-btn svg polygon { fill: #3a3a4c; }
 .layout-btn.is-active { border-color: var(--pink); }
-.layout-btn.is-active svg rect { fill: var(--pink); }
+.layout-btn.is-active svg rect, .layout-btn.is-active svg polygon { fill: var(--pink); }
 
 .seg {
   display: flex;
@@ -247,6 +250,28 @@ body {
 }
 
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.chips-row { margin-top: 8px; }
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.preset-btn {
+  padding: 9px 6px;
+  background: var(--panel-2);
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.preset-btn:hover { border-color: var(--gold); }
 
 .chip {
   padding: 7px 13px;
