@@ -12,6 +12,9 @@
 // boulevard.jpg, pier.jpg, beach.jpg, heist.jpg, chase.jpg, club.jpg,
 // biker.jpg) are illustrated character art made with an image model for this
 // entry — cel-shaded GTA-poster style, no photographs of real people.
+// Touch-up: the wanted stars are drawn small (about half their first size),
+// and the heist sample now shows the crew with US dollar cash — stacks of
+// bills, money bags and duffel bags full of cash in front of the vault.
 //
 // Serve it locally with `node serve.ts`, then open http://localhost:8080.
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:

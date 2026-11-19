@@ -48,4 +48,5 @@ on make.fun. Original work: no Rockstar logo, wordmark, artwork, character or
 font is used. The display font is Anton under the SIL Open Font License 1.1
 (see `app/fonts/OFL.txt`).
 
-<!-- Sample photos: an illustrated character set (cel-shaded GTA-poster style) — no photographs. -->
+<!-- Sample photos: an illustrated character set (cel-shaded GTA-poster style) — no photographs.
+     Touch-up: wanted stars resized small; heist sample now shows the crew with US dollar cash. -->

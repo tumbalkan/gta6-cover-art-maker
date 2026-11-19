@@ -420,9 +420,10 @@ function drawCaptionLettering(ctx, width, height, state) {
   ctx.restore();
 }
 
-/** Five gold wanted stars in the top-right corner, GTA style. */
+/** Five gold wanted stars in the top-right corner, GTA style. Kept small
+    (about half the original size) so they decorate without dominating. */
 function drawWantedStars(ctx, width) {
-  const starR = Math.max(14, Math.round(width * 0.024));
+  const starR = Math.max(7, Math.round(width * 0.012));
   const gap = starR * 0.35;
   const margin = Math.round(width * 0.025);
   const total = starR * 2 * 5 + gap * 4;
