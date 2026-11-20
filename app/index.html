@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<!-- Sample photos are illustrated characters (cel-shaded poster art), not photographs. -->
+<!-- Sample photos are a photorealistic AI set: eight new characters, not photographs of real people. -->
 <header class="topbar">
   <div class="brand">
     <span class="brand-mark">VF</span>
@@ -104,7 +104,7 @@
       <p class="hint">One tap sets the title, script subtitle, tagline, quote, grade and wanted stars.</p>
       <div class="preset-grid" id="presetBtns">
         <button type="button" data-preset="vice-city" class="preset-btn">Vice City</button>
-        <button type="button" data-preset="heist-crew" class="preset-btn">Heist Crew</button>
+        <button type="button" data-preset="night-shift" class="preset-btn">Night Shift</button>
         <button type="button" data-preset="getaway" class="preset-btn">Getaway</button>
         <button type="button" data-preset="neon-nights" class="preset-btn">Neon Nights</button>
         <button type="button" data-preset="wanted" class="preset-btn">Wanted</button>
@@ -212,7 +212,7 @@
 
     <section class="group">
       <h2>Selected panel</h2>
-      <p class="hint" id="panelLabel">Panel 1 — Boulevard</p>
+      <p class="hint" id="panelLabel">Panel 1 — Surfer</p>
       <label class="field">
         <span>Zoom</span>
         <input id="zoomInput" type="range" min="100" max="250" value="100">
@@ -231,20 +231,20 @@
       </div>
       <label class="field">
         <span>Tag text</span>
-        <input id="captionText" type="text" value="" maxlength="30" autocomplete="off" placeholder="THE DRIVER or OCEAN DRIVE · 6:42 PM">
+        <input id="captionText" type="text" value="" maxlength="30" autocomplete="off" placeholder="THE SURFER or OCEAN DRIVE · 6:42 PM">
       </label>
       <label class="field">
         <span>Role preset</span>
         <select id="captionPreset" class="select">
           <option value="custom">Custom text…</option>
-          <option value="THE DRIVER">THE DRIVER</option>
-          <option value="THE BOSS">THE BOSS</option>
-          <option value="THE HEIST">THE HEIST</option>
-          <option value="THE RIDER">THE RIDER</option>
+          <option value="THE SURFER">THE SURFER</option>
+          <option value="THE SINGER">THE SINGER</option>
+          <option value="THE RACER">THE RACER</option>
+          <option value="THE LIFEGUARD">THE LIFEGUARD</option>
+          <option value="THE DETECTIVE">THE DETECTIVE</option>
+          <option value="THE CAPTAIN">THE CAPTAIN</option>
+          <option value="THE BARTENDER">THE BARTENDER</option>
           <option value="THE COURIER">THE COURIER</option>
-          <option value="THE ANGLER">THE ANGLER</option>
-          <option value="THE GETAWAY">THE GETAWAY</option>
-          <option value="THE DJ">THE DJ</option>
           <option value="THE STAR">THE STAR</option>
         </select>
       </label>
@@ -257,7 +257,7 @@
       <canvas id="previewCanvas" width="1920" height="1080"></canvas>
     </div>
     <p class="stage-hint">Click a panel to select it, then drag on it to move the photo. Pick a photo on the left to drop it into the selected panel.</p>
-    <p class="stage-note">Works fully offline — photos are read on your machine only. Display fonts: Anton and Pacifico (SIL Open Font License).</p>
+    <p class="stage-note">Works fully offline — photos are read on your machine only. Display fonts: Anton and Pacifico (SIL Open Font License). Samples are photorealistic AI photos of a new cast, not real people.</p>
   </section>
 </main>
 

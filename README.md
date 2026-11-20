@@ -16,17 +16,19 @@ art — entirely offline, in your browser. No uploads, no account, no build step
   cover structure). Fill several panels with one photo or a different photo
   per panel.
 - **Any photo** — drop in your own photos (read on your machine only) or use
-  the eight built-in Vice City samples: neon street, boulevard, beach, pier,
-  heist crew, getaway chase, nightclub and biker. Click a panel to select it,
-  drag to pan the photo, zoom and rotate with sliders. When the browser
-  supports face detection, auto-fill centres the subject's face in its panel.
-  Every panel carries an editable caption tag — a role tag (THE DRIVER,
-  THE HEIST…) or a place/time caption (OCEAN DRIVE · 6:42 PM).
+  the eight built-in photorealistic Vice City samples: surfer, singer, racer,
+  lifeguard, detective, speedboat captain, bartender and courier — a new cast
+  made with an image model, not photographs of real people. Click a panel to
+  select it, drag to pan the photo, zoom and rotate with sliders. When the
+  browser supports face detection, auto-fill centres the subject's face in
+  its panel. Every panel carries an editable caption tag — a role tag
+  (THE SURFER, THE DETECTIVE…) or a place/time caption
+  (OCEAN DRIVE · 6:42 PM).
 - **Bold lettering** — a chrome 3D title (striped sunset-gradient letters
   with a dark outline and extruded shadow, or a flat solid style), a neon
   pink script subtitle (Pacifico, SIL Open Font License), and a tagline
   ribbon. Title, subtitle, tagline, size, position and colour are all
-  editable. One-click presets (Vice City, Heist Crew, Getaway, Neon Nights,
+  editable. One-click presets (Vice City, Night Shift, Getaway, Neon Nights,
   Wanted, Outlaw Run) set the caption, tagline, quote, grade and five-star
   wanted decoration together.
 - **Poster furniture** — the movie-poster dressing: a critic quote bar with
@@ -59,6 +61,8 @@ on make.fun. Original work: no Rockstar logo, wordmark, artwork, character or
 font is used. The display fonts are Anton and Pacifico under the SIL Open
 Font License 1.1 (see `app/fonts/OFL.txt` and `app/fonts/OFL-Pacifico.txt`).
 
-<!-- Sample photos: an illustrated character set (cel-shaded GTA-poster style) — no photographs.
-     Touch-up: wanted stars resized small; heist sample now shows the crew with US dollar cash.
-     Round 3: Cover layout, chrome title, script subtitle, poster furniture, caption tags, Look sliders. -->
+<!-- Sample photos: a photorealistic AI set — eight new characters (surfer, singer, racer,
+     lifeguard, detective, speedboat captain, bartender, courier), not photographs of real people.
+     Touch-up: wanted stars resized small.
+     Round 3: Cover layout, chrome title, script subtitle, poster furniture, caption tags, Look sliders.
+     Round 4: photoreal sample set replaces the illustrated cast; Night Shift preset replaces Heist Crew. -->

@@ -12,16 +12,17 @@
 // barcode, palm strip), per-panel caption tags, one-click title presets,
 // face-aware cropping, a five-star wanted decoration, drag-to-pan photo
 // cropping per panel, and one-click PNG export at 1080x1080, 1080x1350,
-// 1080x1920 and 1920x1080. The eight sample photos (app/samples/neon.jpg,
-// boulevard.jpg, pier.jpg, beach.jpg, heist.jpg, chase.jpg, club.jpg,
-// biker.jpg) are illustrated character art made with an image model for this
-// entry — cel-shaded GTA-poster style, no photographs of real people.
-// Touch-up: the wanted stars are drawn small (about half their first size),
-// and the heist sample now shows the crew with US dollar cash — stacks of
-// bills, money bags and duffel bags full of cash in front of the vault.
+// 1080x1920 and 1920x1080. The eight sample photos (app/samples/surfer.jpg,
+// singer.jpg, racer.jpg, lifeguard.jpg, detective.jpg, speedboat.jpg,
+// bartender.jpg, courier.jpg) are photorealistic AI photos made with an
+// image model for this entry — a new eight-person cast, different from the
+// illustrated rounds, and no photographs of real people.
+// Touch-up: the wanted stars are drawn small (about half their first size).
 // Round 3: the Cover layout, chrome title, script subtitle, poster
 // furniture, caption tags and look sliders above; the script font is
 // Pacifico under the SIL Open Font License (see app/fonts/OFL-Pacifico.txt).
+// Round 4: the photoreal sample set above replaces the illustrated cast;
+// the Night Shift preset replaces Heist Crew to match the new characters.
 //
 // Serve it locally with `node serve.ts`, then open http://localhost:8080.
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:

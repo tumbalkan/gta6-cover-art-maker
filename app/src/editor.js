@@ -5,17 +5,19 @@
 import { LAYOUTS, GRADES, renderCover, layoutPanelRects, pointInPanel, tracePanelPath } from './render.js';
 
 const SAMPLE_PHOTOS = [
-  { name: 'Neon Street', src: 'samples/neon.jpg' },
-  { name: 'Boulevard', src: 'samples/boulevard.jpg' },
-  { name: 'Beach', src: 'samples/beach.jpg' },
-  { name: 'Pier', src: 'samples/pier.jpg' },
-  { name: 'Heist Crew', src: 'samples/heist.jpg' },
-  { name: 'Getaway', src: 'samples/chase.jpg' },
-  { name: 'Nightclub', src: 'samples/club.jpg' },
-  { name: 'Biker', src: 'samples/biker.jpg' },
+  { name: 'Surfer', src: 'samples/surfer.jpg' },
+  { name: 'Singer', src: 'samples/singer.jpg' },
+  { name: 'Racer', src: 'samples/racer.jpg' },
+  { name: 'Lifeguard', src: 'samples/lifeguard.jpg' },
+  { name: 'Detective', src: 'samples/detective.jpg' },
+  { name: 'Speedboat', src: 'samples/speedboat.jpg' },
+  { name: 'Bartender', src: 'samples/bartender.jpg' },
+  { name: 'Courier', src: 'samples/courier.jpg' },
 ];
 
-// The samples are an illustrated character set: cel-shaded poster art, no photographs.
+// The samples are a photorealistic photo set: eight new AI-generated
+// characters, a different cast from the illustrated rounds — no photographs
+// of real people.
 
 const EXPORT_SIZES = {
   '1080x1080': { w: 1080, h: 1080, label: '1080 × 1080' },
@@ -30,7 +32,7 @@ const SURPRISE_TITLES = [
   ['PALM HEAT', 'Where the Sun Never Sets'],
   ['SUNSET RUN', 'Top Down, Full Send'],
   ['VICE LIFE', 'Every Night Is a Poster'],
-  ['HEIST CREW', 'Every Score Has a Price'],
+  ['NIGHT SHIFT', 'The City Never Sleeps'],
   ['GETAWAY', 'Top Down, Full Send'],
   ['WANTED', 'Five Stars and Counting'],
   ['OUTLAW RUN', 'Ride or Die in Vice City'],
@@ -40,7 +42,7 @@ const SURPRISE_TITLES = [
  *  and wanted stars in one tap. All quote and tagline wording is original. */
 const PRESETS = [
   { id: 'vice-city', label: 'Vice City', title: 'VICE CITY', subtitle: 'Summer in the Sun', grade: 'sunset', wanted: false, tagline: 'ONE LAST SUMMER · NO WAY HOME', quote: 'SUNSET, SWEAT AND BAD DECISIONS', source: 'THE VICE HERALD' },
-  { id: 'heist-crew', label: 'Heist Crew', title: 'HEIST CREW', subtitle: 'Every Score Has a Price', grade: 'heist', wanted: true, tagline: 'FIVE MASKS · ONE VAULT · NO WITNESSES', quote: 'EVERY DOLLAR HAS A STORY', source: 'PALM CITY POST' },
+  { id: 'night-shift', label: 'Night Shift', title: 'NIGHT SHIFT', subtitle: 'The City Never Sleeps', grade: 'neon', wanted: true, tagline: 'NEON · RAIN · NO WITNESSES', quote: 'EVERY STREET HAS A STORY', source: 'PALM CITY POST' },
   { id: 'getaway', label: 'Getaway', title: 'GETAWAY', subtitle: 'Top Down, Full Send', grade: 'ocean', wanted: true, tagline: 'TOP DOWN · FULL SEND · NO BRAKES', quote: 'FULL THROTTLE FROM THE FIRST FRAME', source: 'SUNSET TRIBUNE' },
   { id: 'neon-nights', label: 'Neon Nights', title: 'NEON NIGHTS', subtitle: 'Ocean Drive After Dark', grade: 'neon', wanted: false, tagline: 'THE NIGHT BELONGS TO US', quote: 'THE CITY GLOWS AFTER DARK', source: 'THE NEON REVIEW' },
   { id: 'wanted', label: 'Wanted', title: 'WANTED', subtitle: 'Five Stars and Counting', grade: 'midnight', wanted: true, tagline: 'RUN FAST · SHINE BRIGHT · NEVER CAUGHT', quote: 'FIVE STARS AND STILL RUNNING', source: 'VICE CITY CHRONICLE' },
@@ -49,14 +51,14 @@ const PRESETS = [
 
 /** Default caption tag per built-in sample, in SAMPLE_PHOTOS order. */
 const SAMPLE_CAPTIONS = [
+  { mode: 'role', text: 'THE SURFER', show: true },
+  { mode: 'role', text: 'THE SINGER', show: true },
+  { mode: 'role', text: 'THE RACER', show: true },
+  { mode: 'role', text: 'THE LIFEGUARD', show: true },
+  { mode: 'role', text: 'THE DETECTIVE', show: true },
+  { mode: 'role', text: 'THE CAPTAIN', show: true },
+  { mode: 'role', text: 'THE BARTENDER', show: true },
   { mode: 'role', text: 'THE COURIER', show: true },
-  { mode: 'role', text: 'THE DRIVER', show: true },
-  { mode: 'role', text: 'THE COAST', show: true },
-  { mode: 'role', text: 'THE ANGLER', show: true },
-  { mode: 'role', text: 'THE HEIST', show: true },
-  { mode: 'role', text: 'THE GETAWAY', show: true },
-  { mode: 'role', text: 'THE DJ', show: true },
-  { mode: 'role', text: 'THE RIDER', show: true },
 ];
 
 /** The caption a library photo carries when it lands in a panel. */
@@ -586,10 +588,10 @@ async function initEditor() {
       console.warn('Sample photo failed to load:', sample.src);
     }
   }
-  // Default cover: neon street hero, boulevard / beach / pier in the strip.
+  // Default cover: surfer hero, singer / racer / lifeguard in the strip.
   // The strip pans frame the faces, which sit near the top of those photos.
-  // Panels 5–9 (heist crew, getaway, nightclub, biker, neon again) wait for
-  // the six-panel comic grid and the nine-panel Cover layout.
+  // Panels 5–9 (detective, speedboat, bartender, courier, surfer again) wait
+  // for the six-panel comic grid and the nine-panel Cover layout.
   const order = [0, 1, 2, 3, 4, 5, 6, 7, 0];
   const defaultPans = [
     { dx: 0, dy: 0 },

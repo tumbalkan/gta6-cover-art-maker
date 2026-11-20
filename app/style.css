@@ -1,4 +1,4 @@
-/* VICEFRAME editor styles. Eight illustrated character samples (cel-shaded poster art). */
+/* VICEFRAME editor styles. Eight photorealistic AI sample photos (new cast). */
 @font-face {
   font-family: "Anton";
   src: url("fonts/Anton-Regular.ttf") format("truetype");
@@ -158,6 +158,8 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* Faces sit near the top of the photoreal samples; bias the crop upward. */
+  object-position: center 25%;
   display: block;
 }
 

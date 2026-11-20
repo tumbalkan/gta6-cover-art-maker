@@ -6,8 +6,8 @@
 // barcode, palm strip), per-panel caption tags and the five-star wanted
 // decoration, all drawn on a 2D canvas. Pure functions of the editor state —
 // the same code draws the live preview and the exported PNG, so what you see
-// is exactly what you share. The built-in samples are illustrated characters
-// in the same cel-shaded poster style, never photographs.
+// is exactly what you share. The built-in samples are photorealistic AI
+// photos of a new eight-person cast, never photographs of real people.
 
 /** Panel layouts: each one maps the cover size to its panel rectangles. */
 export const LAYOUTS = {
