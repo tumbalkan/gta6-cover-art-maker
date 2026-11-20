@@ -1,10 +1,13 @@
-// VICEFRAME cover renderer: eight layouts (including slanted key-art panels
-// and a six-panel comic grid), seven colour grades, effects, caption
-// lettering and the five-star wanted decoration, all drawn on a 2D canvas.
-// Pure functions of the editor state — the same code draws the live preview
-// and the exported PNG, so what you see is exactly what you share. The
-// built-in samples are illustrated characters in the same cel-shaded poster
-// style, never photographs.
+// VICEFRAME cover renderer: nine layouts (including slanted key-art panels,
+// a six-panel comic grid and a nine-panel Cover around a central title
+// block), seven colour grades, a stylization engine (paint posterize,
+// halftone, film grain, glow), chrome 3D lettering with a script subtitle,
+// poster furniture (quote bar, VOL badge, tagline ribbon, seal, billing,
+// barcode, palm strip), per-panel caption tags and the five-star wanted
+// decoration, all drawn on a 2D canvas. Pure functions of the editor state —
+// the same code draws the live preview and the exported PNG, so what you see
+// is exactly what you share. The built-in samples are illustrated characters
+// in the same cel-shaded poster style, never photographs.
 
 /** Panel layouts: each one maps the cover size to its panel rectangles. */
 export const LAYOUTS = {
@@ -149,6 +152,47 @@ export const LAYOUTS = {
       return rects;
     },
   },
+  cover: {
+    label: 'Cover',
+    panelCount: 9,
+    // The official GTA cover structure: nine panels around a central title
+    // block. Top row three leads, middle row two flanks with the title block
+    // between them, bottom row four scenes. titleBlock names the central
+    // rectangle the caption lettering centres itself in.
+    titleBlock(w, h, gap) {
+      const r1 = Math.round(h / 3);
+      const r2 = Math.round((h * 2) / 3);
+      return {
+        x: Math.round(w * 0.25) + gap,
+        y: r1 + gap,
+        w: Math.round(w * 0.5) - gap * 2,
+        h: r2 - r1 - gap * 2,
+      };
+    },
+    rects(w, h, gap) {
+      const r1 = Math.round(h / 3);
+      const r2 = Math.round((h * 2) / 3);
+      const c1 = Math.round(w / 3);
+      const c2 = Math.round((w * 2) / 3);
+      const q = Math.round(w / 4);
+      const topH = r1 - gap;
+      const midY = r1 + gap;
+      const midH = r2 - r1 - gap * 2;
+      const botY = r2 + gap;
+      const botH = h - r2 - gap;
+      return [
+        { x: 0, y: 0, w: c1 - gap, h: topH },
+        { x: c1 + gap, y: 0, w: c2 - c1 - gap * 2, h: topH },
+        { x: c2 + gap, y: 0, w: w - c2 - gap, h: topH },
+        { x: 0, y: midY, w: Math.round(w * 0.25) - gap, h: midH },
+        { x: Math.round(w * 0.75) + gap, y: midY, w: w - Math.round(w * 0.75) - gap, h: midH },
+        { x: 0, y: botY, w: q - gap, h: botH },
+        { x: q + gap, y: botY, w: q - gap * 2, h: botH },
+        { x: q * 2 + gap, y: botY, w: q - gap * 2, h: botH },
+        { x: q * 3 + gap, y: botY, w: w - q * 3 - gap, h: botH },
+      ];
+    },
+  },
 };
 
 /** Colour grades: a canvas filter for the photos plus a tinted overlay. */
@@ -200,6 +244,48 @@ function mulberry32(seed) {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+/** Posterize the canvas: quantize every channel through a lookup table, so a
+ *  photo flattens into a few bold colour levels like printed poster art.
+ *  amount 0 is a no-op; 100 leaves about three levels per channel. */
+function posterize(ctx, width, height, amount) {
+  if (!amount || amount <= 0) return;
+  const levels = Math.max(3, Math.round(26 - amount * 0.23));
+  const lut = new Uint8ClampedArray(256);
+  for (let v = 0; v < 256; v++) {
+    lut[v] = Math.round((Math.round((v / 255) * (levels - 1)) / (levels - 1)) * 255);
+  }
+  const image = ctx.getImageData(0, 0, width, height);
+  const data = image.data;
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = lut[data[i]];
+    data[i + 1] = lut[data[i + 1]];
+    data[i + 2] = lut[data[i + 2]];
+  }
+  ctx.putImageData(image, 0, 0);
+}
+
+/** Soft bloom: a blurred copy of the canvas composited back additively.
+ *  A module-level offscreen canvas is reused so exports do not allocate
+ *  a fresh full-size buffer on every render. */
+let glowCanvas = null;
+function drawGlow(ctx, canvas, width, height, amount) {
+  if (!amount || amount <= 0) return;
+  if (!glowCanvas) glowCanvas = document.createElement('canvas');
+  glowCanvas.width = width;
+  glowCanvas.height = height;
+  const off = glowCanvas.getContext('2d');
+  off.clearRect(0, 0, width, height);
+  off.drawImage(canvas, 0, 0);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = (amount / 100) * 0.4;
+  try {
+    ctx.filter = `blur(${Math.max(8, Math.round(width * 0.012))}px)`;
+  } catch (err) { /* older canvas: unblurred bloom still reads */ }
+  ctx.drawImage(glowCanvas, 0, 0);
+  ctx.restore();
 }
 
 /** Panel rectangles for a layout at a given cover size (shared with the editor for hit-testing). */
@@ -314,46 +400,75 @@ function drawVignette(ctx, width, height) {
   ctx.fillRect(0, 0, width, height);
 }
 
-/** Scatter deterministic film grain over the cover. */
-function drawFilmGrain(ctx, width, height) {
+/** Scatter deterministic film grain over the cover; amount 0–100 sets the
+ *  density and strength. The seeded PRNG keeps preview and export identical. */
+function drawFilmGrain(ctx, width, height, amount = 50) {
+  if (!amount || amount <= 0) return;
   const random = mulberry32(1337);
-  const dots = Math.floor((width * height) / 900);
+  const dots = Math.floor(((width * height) / 900) * (0.4 + (amount / 100) * 1.2));
+  const lightAlpha = 0.02 + (amount / 100) * 0.05;
+  const darkAlpha = 0.025 + (amount / 100) * 0.06;
   ctx.save();
   for (let i = 0; i < dots; i++) {
     const px = random() * width;
     const py = random() * height;
     const light = random() > 0.5;
-    ctx.fillStyle = light ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
+    ctx.fillStyle = light ? `rgba(255,255,255,${lightAlpha})` : `rgba(0,0,0,${darkAlpha})`;
     ctx.fillRect(px, py, 1.6, 1.6);
   }
   ctx.restore();
 }
 
-/** Print-style halftone dot screen over the cover. */
-function drawHalftone(ctx, width, height) {
-  const step = Math.max(10, Math.round(width / 140));
+/** Print-style halftone dot screen over the cover; amount 0–100 grows the
+ *  dots and deepens the screen. */
+function drawHalftone(ctx, width, height, amount = 50) {
+  if (!amount || amount <= 0) return;
+  const step = Math.max(8, Math.round(width / 160));
+  const dot = 1.2 + (amount / 100) * 2.6;
   const path = new Path2D();
   for (let gy = step / 2; gy < height; gy += step) {
     for (let gx = step / 2; gx < width; gx += step) {
-      path.rect(gx, gy, 1.8, 1.8);
+      path.rect(gx, gy, dot, dot);
     }
   }
   ctx.save();
   ctx.globalCompositeOperation = 'multiply';
-  ctx.globalAlpha = 0.16;
+  ctx.globalAlpha = 0.05 + (amount / 100) * 0.3;
   ctx.fillStyle = '#000000';
   ctx.fill(path);
   ctx.restore();
 }
 
-/** Big display lettering: Anton, outlined, shadowed, fitted to the cover width. */
+/** Sunset-striped gradient for the chrome title: hard bands from pale
+ *  yellow through orange and pink to violet, like a Vice City sunset. */
+function chromeGradient(ctx, y0, y1) {
+  const bands = ['#fff7ae', '#ffe259', '#ffb347', '#ff7a18', '#ff5e62', '#ff2e88', '#c026d3', '#7c3aed'];
+  const gradient = ctx.createLinearGradient(0, y0, 0, y1);
+  bands.forEach((color, i) => {
+    gradient.addColorStop(i / bands.length, color);
+    gradient.addColorStop((i + 1) / bands.length, color);
+  });
+  return gradient;
+}
+
+/** Big display lettering: a chrome 3D title (striped sunset-gradient fill,
+ *  dark outline, extruded shadow) or a flat solid title, a neon-pink script
+ *  subtitle in Pacifico, and a tagline ribbon — all fitted to the cover
+ *  width, never overflowing. On the Cover layout the whole block centres
+ *  itself in the layout's central title block. */
 function drawCaptionLettering(ctx, width, height, state) {
   const title = (state.title || '').trim().toUpperCase();
-  const subtitle = (state.subtitle || '').trim().toUpperCase();
-  if (!title && !subtitle) return;
+  const subtitle = (state.subtitle || '').trim();
+  const furniture = state.furniture || {};
+  const tagline = furniture.on ? (furniture.tagline || '').trim().toUpperCase() : '';
+  if (!title && !subtitle && !tagline) return;
+  const layout = LAYOUTS[state.layout] || LAYOUTS['hero-strip'];
   const unit = Math.min(width, height);
+  const gap = Math.max(4, Math.round(width * 0.006));
+  const block = layout.titleBlock ? layout.titleBlock(width, height, gap) : null;
+  const maxWidth = block ? block.w * 0.96 : width * 0.92;
+
   let size = unit * 0.115 * ((state.titleSize || 100) / 100);
-  const maxWidth = width * 0.92;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   if (title) {
@@ -363,22 +478,47 @@ function drawCaptionLettering(ctx, width, height, state) {
       ctx.font = `${size}px Anton, "Arial Black", sans-serif`;
     }
   }
-  const subSize = Math.max(16, size * 0.3);
-  const gapAfterTitle = size * 0.42;
-  const blockHeight = (title ? size : 0) + (subtitle ? gapAfterTitle + subSize : 0);
+  const subSize = Math.max(16, size * 0.42);
+  let scriptSize = subSize;
+  if (subtitle) {
+    ctx.font = `${scriptSize}px Pacifico, cursive`;
+    while (scriptSize > 14 && ctx.measureText(subtitle).width > maxWidth) {
+      scriptSize *= 0.94;
+      ctx.font = `${scriptSize}px Pacifico, cursive`;
+    }
+  }
+  const ribbonSize = Math.max(11, size * 0.16);
+  const gapAfterTitle = size * 0.3;
+  const gapAfterSub = size * 0.22;
+  const ribbonH = tagline ? ribbonSize * 2.1 + gapAfterSub : 0;
+  const blockHeight = (title ? size : 0)
+    + (subtitle ? gapAfterTitle + scriptSize : 0)
+    + ribbonH;
+
   let blockTop;
-  if (state.titlePos === 'top') blockTop = height * 0.05;
+  if (block) {
+    blockTop = block.y + (block.h - blockHeight) / 2;
+  } else if (state.titlePos === 'top') blockTop = height * 0.05;
   else if (state.titlePos === 'center') blockTop = height / 2 - blockHeight / 2;
-  else blockTop = height * 0.96 - blockHeight;
+  else blockTop = height * (furniture.on ? 0.925 : 0.96) - blockHeight;
 
   // Key-art layouts slash the whole caption block at an angle, GTA key-art style.
-  const layout = LAYOUTS[state.layout] || LAYOUTS['hero-strip'];
   const angle = ((layout.titleAngle || 0) * Math.PI) / 180;
   ctx.save();
   if (angle) {
     ctx.translate(width / 2, height / 2);
     ctx.rotate(angle);
     ctx.translate(-width / 2, -height / 2);
+  }
+
+  if (block) {
+    // The central title block gets its own deep-violet ground so the chrome
+    // lettering sits on something deliberate, not on bare background.
+    const ground = ctx.createLinearGradient(0, block.y, 0, block.y + block.h);
+    ground.addColorStop(0, '#1c1229');
+    ground.addColorStop(1, '#0a0a0f');
+    ctx.fillStyle = ground;
+    ctx.fillRect(block.x, block.y, block.w, block.h);
   }
 
   // Soft dark scrim behind the lettering so it reads over any photo.
@@ -389,46 +529,93 @@ function drawCaptionLettering(ctx, width, height, state) {
   scrim.addColorStop(0.5, 'rgba(0,0,0,0.42)');
   scrim.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = scrim;
-  ctx.fillRect(0, scrimTop, width, scrimBottom - scrimTop);
+  ctx.fillRect(block ? block.x : 0, scrimTop, block ? block.w : width, scrimBottom - scrimTop);
 
-  const cx = width / 2;
-  ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.55)';
-  ctx.shadowBlur = size * 0.16;
-  ctx.shadowOffsetY = size * 0.05;
+  const cx = block ? block.x + block.w / 2 : width / 2;
+  const chrome = (state.titleStyle || 'chrome') === 'chrome';
   if (title) {
+    const titleY = blockTop + size * 0.92;
     ctx.font = `${size}px Anton, "Arial Black", sans-serif`;
     ctx.lineJoin = 'round';
     ctx.lineWidth = Math.max(2, size * 0.13);
-    ctx.strokeStyle = '#101014';
-    ctx.strokeText(title, cx, blockTop + size * 0.92);
-    ctx.fillStyle = state.titleColor || '#ffffff';
-    ctx.fillText(title, cx, blockTop + size * 0.92);
+    if (chrome) {
+      // Extruded 3D offset in deep violet, then the striped sunset fill.
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.55)';
+      ctx.shadowBlur = size * 0.16;
+      ctx.shadowOffsetY = size * 0.05;
+      ctx.fillStyle = '#2a0a4a';
+      ctx.fillText(title, cx + size * 0.035, titleY + size * 0.05);
+      ctx.fillStyle = chromeGradient(ctx, blockTop, blockTop + size);
+      ctx.fillText(title, cx, titleY);
+      ctx.restore();
+      ctx.strokeStyle = '#101014';
+      ctx.strokeText(title, cx, titleY);
+    } else {
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.55)';
+      ctx.shadowBlur = size * 0.16;
+      ctx.shadowOffsetY = size * 0.05;
+      ctx.strokeStyle = '#101014';
+      ctx.strokeText(title, cx, titleY);
+      ctx.fillStyle = state.titleColor || '#ffffff';
+      ctx.fillText(title, cx, titleY);
+      ctx.restore();
+    }
   }
   if (subtitle) {
-    ctx.font = `${subSize}px Anton, "Arial Black", sans-serif`;
-    try { ctx.letterSpacing = `${Math.round(subSize * 0.35)}px`; } catch (err) { /* older canvas: no letter spacing */ }
-    ctx.lineWidth = Math.max(1.5, subSize * 0.16);
-    ctx.strokeStyle = '#101014';
-    const subY = blockTop + size + gapAfterTitle + subSize * 0.8;
+    // Neon script subtitle, tucked close under the title, glowing pink.
+    const subY = blockTop + size + gapAfterTitle + scriptSize * 0.85;
+    ctx.save();
+    ctx.font = `${scriptSize}px Pacifico, cursive`;
+    ctx.shadowColor = 'rgba(255,46,136,0.85)';
+    ctx.shadowBlur = scriptSize * 0.35;
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = Math.max(1.5, scriptSize * 0.12);
+    ctx.strokeStyle = '#1a0510';
     ctx.strokeText(subtitle, cx, subY);
-    ctx.fillStyle = '#ffd166';
+    ctx.fillStyle = '#ff5ea8';
     ctx.fillText(subtitle, cx, subY);
+    ctx.restore();
+  }
+  if (tagline) {
+    // Tagline ribbon: a dark pill with a pink edge, centred under the subtitle.
+    const ribbonY = blockTop + size + (subtitle ? gapAfterTitle + scriptSize : 0) + gapAfterSub;
+    ctx.font = `${ribbonSize}px Anton, "Arial Black", sans-serif`;
+    try { ctx.letterSpacing = `${Math.round(ribbonSize * 0.28)}px`; } catch (err) { /* older canvas */ }
+    const textW = ctx.measureText(tagline).width;
+    const padX = ribbonSize * 1.1;
+    const pillW = Math.min(maxWidth, textW + padX * 2);
+    const pillH = ribbonSize * 2.1;
+    const pillX = cx - pillW / 2;
+    ctx.save();
+    ctx.fillStyle = 'rgba(8,8,14,0.88)';
+    ctx.strokeStyle = '#ff2e88';
+    ctx.lineWidth = Math.max(1.5, ribbonSize * 0.12);
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') ctx.roundRect(pillX, ribbonY, pillW, pillH, pillH / 2);
+    else ctx.rect(pillX, ribbonY, pillW, pillH);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#ffd166';
+    ctx.fillText(tagline, cx, ribbonY + pillH * 0.72);
+    ctx.restore();
     try { ctx.letterSpacing = '0px'; } catch (err) { /* ignore */ }
   }
-  ctx.restore();
   ctx.restore();
 }
 
 /** Five gold wanted stars in the top-right corner, GTA style. Kept small
-    (about half the original size) so they decorate without dominating. */
-function drawWantedStars(ctx, width) {
+ *  (about half the original size) so they decorate without dominating. When
+ *  the poster furniture is on, they sit below the quote bar so they never
+ *  collide with the VOL badge. */
+function drawWantedStars(ctx, width, furnitureOn) {
   const starR = Math.max(7, Math.round(width * 0.012));
   const gap = starR * 0.35;
   const margin = Math.round(width * 0.025);
   const total = starR * 2 * 5 + gap * 4;
   let cx = width - margin - total + starR;
-  const cy = margin + starR;
+  const cy = margin + starR + (furnitureOn ? Math.round(width * 0.032) : 0);
   ctx.save();
   for (let i = 0; i < 5; i++) {
     drawStar(ctx, cx, cy, starR);
@@ -461,6 +648,263 @@ function drawStar(ctx, cx, cy, r) {
   ctx.stroke();
 }
 
+/** One palm silhouette: a leaning trunk and six drooping fronds, drawn as
+ *  dark strokes so it reads as a cut-out against the sunset strip. */
+function drawPalm(ctx, x, baseY, s) {
+  ctx.save();
+  ctx.strokeStyle = '#0d0618';
+  ctx.lineCap = 'round';
+  ctx.lineWidth = Math.max(1.5, s * 0.09);
+  ctx.beginPath();
+  ctx.moveTo(x, baseY);
+  ctx.quadraticCurveTo(x + s * 0.08, baseY - s * 0.55, x + s * 0.22, baseY - s * 0.9);
+  ctx.stroke();
+  const topX = x + s * 0.22;
+  const topY = baseY - s * 0.9;
+  ctx.lineWidth = Math.max(1, s * 0.06);
+  for (let i = 0; i < 6; i++) {
+    const a = Math.PI * (0.15 + (i / 5) * 0.7);
+    const ex = topX + Math.cos(a) * s * 0.55;
+    const ey = topY - Math.sin(a) * s * 0.28 + s * 0.3;
+    ctx.beginPath();
+    ctx.moveTo(topX, topY);
+    ctx.quadraticCurveTo(topX + Math.cos(a) * s * 0.3, topY - s * 0.22, ex, ey);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** A drawn barcode: deterministic pseudo-random bars with a number line. */
+function drawBarcode(ctx, x, y, w, h) {
+  const random = mulberry32(20240);
+  ctx.save();
+  ctx.fillStyle = '#f5f0e6';
+  ctx.fillRect(x, y, w, h);
+  let bx = x + w * 0.06;
+  const barTop = y + h * 0.12;
+  const barBottom = y + h * 0.68;
+  ctx.fillStyle = '#111111';
+  while (bx < x + w * 0.94) {
+    const bw = 1 + random() * w * 0.02;
+    if (random() > 0.35) ctx.fillRect(bx, barTop, bw, barBottom - barTop);
+    bx += bw + 1 + random() * w * 0.015;
+  }
+  ctx.fillStyle = '#111111';
+  ctx.font = `${Math.max(7, h * 0.18)}px "Courier New", monospace`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('8 901234 567890', x + w / 2, y + h * 0.92);
+  ctx.restore();
+}
+
+/** Gold starburst seal: a many-point star with the ORIGINAL COVER ART text. */
+function drawSeal(ctx, cx, cy, r) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.beginPath();
+  const points = 16;
+  for (let i = 0; i < points * 2; i++) {
+    const radius = i % 2 === 0 ? r : r * 0.8;
+    const a = (Math.PI / points) * i - Math.PI / 2;
+    const px = radius * Math.cos(a);
+    const py = radius * Math.sin(a);
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.shadowColor = 'rgba(0,0,0,0.5)';
+  ctx.shadowBlur = r * 0.2;
+  ctx.shadowOffsetY = r * 0.08;
+  ctx.fillStyle = '#f5b301';
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.lineWidth = Math.max(1.5, r * 0.06);
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#3a2503';
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(0, 0, r * 0.68, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffd94d';
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = '#3a2503';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `${Math.max(8, r * 0.22)}px Anton, "Arial Black", sans-serif`;
+  ctx.fillText('ORIGINAL', 0, -r * 0.16);
+  ctx.fillText('COVER ART', 0, r * 0.14);
+  ctx.font = `${Math.max(7, r * 0.18)}px Anton, sans-serif`;
+  ctx.fillText('★ ★ ★', 0, r * 0.42);
+  ctx.restore();
+}
+
+/** Poster furniture: critic quote bar with stars, VOL badge, gold seal,
+ *  billing line, barcode, palm strip and COMING SOON. Everything scales
+ *  with the export size and stays out of the title's way. */
+function drawFurniture(ctx, width, height, state) {
+  const furniture = state.furniture || {};
+  if (!furniture.on) return;
+  const margin = Math.round(width * 0.02);
+  const bandH = Math.max(26, Math.round(height * 0.042));
+
+  // Critic quote bar across the top, over a translucent dark band.
+  ctx.save();
+  ctx.fillStyle = 'rgba(8,8,14,0.72)';
+  ctx.fillRect(0, 0, width, bandH);
+  const starR = Math.max(6, bandH * 0.26);
+  let sx = margin + starR;
+  const sy = bandH / 2;
+  for (let i = 0; i < 5; i++) {
+    drawStar(ctx, sx, sy, starR);
+    sx += starR * 2 + starR * 0.3;
+  }
+  const quote = (furniture.quote || '').trim();
+  const source = (furniture.source || '').trim();
+  const volText = (furniture.vol || 'VOL. 01').trim();
+  let quoteSize = Math.max(11, Math.round(bandH * 0.42));
+  ctx.font = `${quoteSize}px Anton, "Arial Black", sans-serif`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  // VOL badge first, so the quote knows how much room it has.
+  let badgeW = 0;
+  if (volText) {
+    ctx.font = `${Math.max(11, Math.round(bandH * 0.4))}px Anton, "Arial Black", sans-serif`;
+    badgeW = ctx.measureText(volText).width + bandH * 0.9;
+  }
+  const quoteX = sx + starR;
+  const quoteMax = width - badgeW - margin * 2 - quoteX;
+  const quoteLine = quote ? `"${quote.toUpperCase()}"` : '';
+  if (quoteLine && quoteMax > 60) {
+    ctx.font = `${quoteSize}px Anton, "Arial Black", sans-serif`;
+    while (quoteSize > 9 && ctx.measureText(quoteLine).width > quoteMax * 0.8) {
+      quoteSize -= 1;
+      ctx.font = `${quoteSize}px Anton, "Arial Black", sans-serif`;
+    }
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(quoteLine, quoteX, sy + 1);
+    if (source) {
+      const srcX = quoteX + ctx.measureText(quoteLine).width + quoteSize * 0.8;
+      ctx.font = `${Math.max(9, quoteSize * 0.72)}px Anton, "Arial Black", sans-serif`;
+      ctx.fillStyle = '#ffd166';
+      ctx.fillText(`— ${source.toUpperCase()}`, srcX, sy + 1);
+    }
+  }
+  if (volText) {
+    const badgeH = bandH * 0.78;
+    const badgeX = width - margin - badgeW;
+    const badgeY = (bandH - badgeH) / 2;
+    ctx.fillStyle = '#ffd166';
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 4);
+    else ctx.rect(badgeX, badgeY, badgeW, badgeH);
+    ctx.fill();
+    ctx.fillStyle = '#1a1206';
+    ctx.font = `${Math.max(11, Math.round(bandH * 0.4))}px Anton, "Arial Black", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(volText.toUpperCase(), badgeX + badgeW / 2, badgeY + badgeH / 2 + 1);
+  }
+  ctx.restore();
+
+  // Palm silhouette strip along the very bottom edge.
+  const palmH = Math.max(22, Math.round(height * 0.038));
+  const stripTop = height - palmH;
+  const strip = ctx.createLinearGradient(0, stripTop, 0, height);
+  strip.addColorStop(0, 'rgba(26,11,46,0.95)');
+  strip.addColorStop(1, 'rgba(255,46,136,0.55)');
+  ctx.fillStyle = strip;
+  ctx.fillRect(0, stripTop, width, palmH);
+  const palmCount = Math.max(4, Math.round(width / (palmH * 3.2)));
+  for (let i = 0; i < palmCount; i++) {
+    const px = margin + ((width - margin * 2) * (i + 0.5)) / palmCount;
+    drawPalm(ctx, px, height - 1, palmH * (0.9 + ((i * 37) % 3) * 0.12));
+  }
+
+  // A soft dark footer band above the palm strip, so the billing line,
+  // COMING SOON and the barcode read over any photo instead of fighting it.
+  const footerH = Math.max(30, Math.round(height * 0.05));
+  const footer = ctx.createLinearGradient(0, stripTop - footerH, 0, stripTop);
+  footer.addColorStop(0, 'rgba(8,8,14,0)');
+  footer.addColorStop(1, 'rgba(8,8,14,0.78)');
+  ctx.fillStyle = footer;
+  ctx.fillRect(0, stripTop - footerH, width, footerH);
+
+  // Billing micro-text, centred just above the palm strip.
+  const billing = (furniture.billing || '').trim();
+  if (billing) {
+    const billSize = Math.max(8, Math.round(width * 0.0075));
+    ctx.save();
+    ctx.font = `${billSize}px Anton, "Arial Black", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = 'rgba(255,255,255,0.78)';
+    ctx.fillText(billing.toUpperCase(), width / 2, stripTop - billSize * 0.9);
+    ctx.restore();
+  }
+
+  // COMING SOON, bottom-left above the palm strip.
+  ctx.save();
+  ctx.font = `${Math.max(11, Math.round(width * 0.016))}px Anton, "Arial Black", sans-serif`;
+  try { ctx.letterSpacing = `${Math.max(2, Math.round(width * 0.004))}px`; } catch (err) { /* older canvas */ }
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.shadowColor = 'rgba(255,46,136,0.8)';
+  ctx.shadowBlur = width * 0.008;
+  ctx.fillStyle = '#ff5ea8';
+  ctx.fillText('COMING SOON', margin, stripTop - Math.max(10, height * 0.012));
+  ctx.restore();
+  try { ctx.letterSpacing = '0px'; } catch (err) { /* ignore */ }
+
+  // Barcode, bottom-right above the palm strip.
+  const bcW = Math.max(64, Math.round(width * 0.062));
+  const bcH = Math.max(26, Math.round(height * 0.032));
+  drawBarcode(ctx, width - margin - bcW, stripTop - bcH - Math.max(6, height * 0.008), bcW, bcH);
+
+  // Gold seal, right side, clear of the barcode and the title.
+  const sealR = Math.max(30, Math.round(width * 0.042));
+  drawSeal(ctx, width - margin - sealR * 1.15, height * 0.68, sealR);
+}
+
+/** One panel's caption tag: a black tag with a pink edge. It sits in the
+ *  panel's bottom-left corner — except when the panel reaches the cover's
+ *  footer (palm strip, billing, barcode, COMING SOON), where it moves to
+ *  the top-left corner, below the quote bar, so nothing covers it. Role
+ *  tags print in caps; place captions print as typed. */
+function drawPanelCaption(ctx, rect, caption, height, furnitureOn) {
+  if (!caption || !caption.show) return;
+  const text = (caption.text || '').trim();
+  if (!text) return;
+  const label = caption.mode === 'place' ? text : text.toUpperCase();
+  let size = Math.max(10, Math.min(26, Math.round(rect.w * 0.052)));
+  ctx.save();
+  ctx.font = `${size}px Anton, "Arial Black", sans-serif`;
+  const maxW = rect.w * 0.86;
+  while (size > 9 && ctx.measureText(label).width > maxW) {
+    size -= 1;
+    ctx.font = `${size}px Anton, "Arial Black", sans-serif`;
+  }
+  const padX = size * 0.7;
+  const tagW = ctx.measureText(label).width + padX * 2 + size * 0.35;
+  const tagH = size * 1.9;
+  const tagX = rect.x + Math.max(6, rect.w * 0.03);
+  const margin = Math.max(6, rect.h * 0.03);
+  let tagY = rect.y + rect.h - tagH - margin;
+  if (furnitureOn && rect.y + rect.h > height * 0.9) {
+    // Bottom-row panel: the footer would cover a bottom tag, so pin it to
+    // the top of the panel, clear of the quote bar.
+    const bandH = Math.max(26, Math.round(height * 0.042));
+    tagY = Math.max(rect.y + margin, bandH + margin);
+  }
+  ctx.fillStyle = 'rgba(8,8,12,0.88)';
+  ctx.fillRect(tagX, tagY, tagW, tagH);
+  ctx.fillStyle = '#ff2e88';
+  ctx.fillRect(tagX, tagY, Math.max(2, size * 0.28), tagH);
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, tagX + padX + size * 0.35, tagY + tagH / 2 + 1);
+  ctx.restore();
+}
+
 /**
  * Render the whole cover onto a canvas at the requested size.
  * Returns the panel rectangles, so the editor can hit-test clicks on them.
@@ -470,6 +914,7 @@ export function renderCover(canvas, state, width, height) {
   canvas.height = height;
   const ctx = canvas.getContext('2d');
   const grade = GRADES[state.grade] || GRADES.sunset;
+  const look = state.look || {};
   const rects = layoutPanelRects(state.layout, width, height);
   ctx.fillStyle = '#0a0a0f';
   ctx.fillRect(0, 0, width, height);
@@ -478,10 +923,17 @@ export function renderCover(canvas, state, width, height) {
     drawPhotoPanel(ctx, panel.photo || null, rect, panel, grade.filter);
   });
   applyGradeOverlay(ctx, width, height, grade);
+  posterize(ctx, width, height, look.paint || 0);
   if (state.effects && state.effects.vignette) drawVignette(ctx, width, height);
-  if (state.effects && state.effects.halftone) drawHalftone(ctx, width, height);
-  if (state.effects && state.effects.grain) drawFilmGrain(ctx, width, height);
+  if (state.effects && state.effects.halftone) drawHalftone(ctx, width, height, look.halftone || 0);
+  if (state.effects && state.effects.grain) drawFilmGrain(ctx, width, height, look.grain || 0);
+  drawGlow(ctx, canvas, width, height, look.glow || 0);
+  rects.forEach((rect, i) => {
+    const panel = (state.panels || [])[i] || {};
+    drawPanelCaption(ctx, rect, panel.caption, height, !!(state.furniture && state.furniture.on));
+  });
+  drawFurniture(ctx, width, height, state);
   drawCaptionLettering(ctx, width, height, state);
-  if (state.wanted) drawWantedStars(ctx, width);
+  if (state.wanted) drawWantedStars(ctx, width, !!(state.furniture && state.furniture.on));
   return rects;
 }

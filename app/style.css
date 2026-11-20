@@ -7,6 +7,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "Pacifico";
+  src: url("fonts/Pacifico-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --bg: #0c0c11;
   --panel: #16161e;
@@ -287,6 +295,36 @@ body {
 .chip.is-on { border-color: var(--cyan); color: #fff; }
 
 .field { display: block; margin-bottom: 11px; }
+
+.field-tight { margin-top: 11px; }
+
+.slider-field > span {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.slider-value {
+  color: var(--text);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.select {
+  width: 100%;
+  padding: 9px 10px;
+  background: #0f0f15;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--pink);
+}
 
 .field > span {
   display: block;

@@ -3,18 +3,25 @@
 // (app/index.html and its vanilla ES modules, no library and no network request). This program
 // hands it in: it copies app/ and screenshots/ from beside this file to /output and writes
 // /output/dossier.json, the summary the judge reads, with the vendored make.fun library.
-// The editor itself: eight multi-panel layouts (including slanted key-art
-// panels, a full-bleed hero and a six-panel comic grid), seven Vice City
-// colour grades, one-click title presets, face-aware cropping, a five-star
-// wanted decoration, drag-to-pan photo cropping per panel, bold Anton
-// lettering, and one-click PNG export at 1080x1080, 1080x1350, 1080x1920
-// and 1920x1080. The eight sample photos (app/samples/neon.jpg,
+// The editor itself: nine multi-panel layouts (including slanted key-art
+// panels, a full-bleed hero, a six-panel comic grid and a nine-panel Cover
+// around a central title block), seven Vice City colour grades, a
+// stylization engine (paint posterize, halftone, film grain, glow sliders),
+// chrome 3D lettering with a Pacifico script subtitle, poster furniture
+// (critic quote bar, VOL badge, tagline ribbon, gold seal, billing block,
+// barcode, palm strip), per-panel caption tags, one-click title presets,
+// face-aware cropping, a five-star wanted decoration, drag-to-pan photo
+// cropping per panel, and one-click PNG export at 1080x1080, 1080x1350,
+// 1080x1920 and 1920x1080. The eight sample photos (app/samples/neon.jpg,
 // boulevard.jpg, pier.jpg, beach.jpg, heist.jpg, chase.jpg, club.jpg,
 // biker.jpg) are illustrated character art made with an image model for this
 // entry — cel-shaded GTA-poster style, no photographs of real people.
 // Touch-up: the wanted stars are drawn small (about half their first size),
 // and the heist sample now shows the crew with US dollar cash — stacks of
 // bills, money bags and duffel bags full of cash in front of the vault.
+// Round 3: the Cover layout, chrome title, script subtitle, poster
+// furniture, caption tags and look sliders above; the script font is
+// Pacifico under the SIL Open Font License (see app/fonts/OFL-Pacifico.txt).
 //
 // Serve it locally with `node serve.ts`, then open http://localhost:8080.
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:

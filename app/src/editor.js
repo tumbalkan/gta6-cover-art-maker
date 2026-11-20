@@ -25,41 +25,70 @@ const EXPORT_SIZES = {
 };
 
 const SURPRISE_TITLES = [
-  ['VICE CITY', 'SUMMER IN THE SUN'],
-  ['NEON NIGHTS', 'OCEAN DRIVE AFTER DARK'],
-  ['PALM HEAT', 'WHERE THE SUN NEVER SETS'],
-  ['SUNSET RUN', 'TOP DOWN, FULL SEND'],
-  ['VICE LIFE', 'EVERY NIGHT IS A POSTER'],
-  ['HEIST CREW', 'EVERY SCORE HAS A PRICE'],
-  ['GETAWAY', 'TOP DOWN, FULL SEND'],
-  ['WANTED', 'FIVE STARS AND COUNTING'],
-  ['OUTLAW RUN', 'RIDE OR DIE IN VICE CITY'],
+  ['VICE CITY', 'Summer in the Sun'],
+  ['NEON NIGHTS', 'Ocean Drive After Dark'],
+  ['PALM HEAT', 'Where the Sun Never Sets'],
+  ['SUNSET RUN', 'Top Down, Full Send'],
+  ['VICE LIFE', 'Every Night Is a Poster'],
+  ['HEIST CREW', 'Every Score Has a Price'],
+  ['GETAWAY', 'Top Down, Full Send'],
+  ['WANTED', 'Five Stars and Counting'],
+  ['OUTLAW RUN', 'Ride or Die in Vice City'],
 ];
 
-/** One-click title presets: title, subtitle, grade and wanted stars in one tap. */
+/** One-click title presets: title, script subtitle, tagline, quote, grade
+ *  and wanted stars in one tap. All quote and tagline wording is original. */
 const PRESETS = [
-  { id: 'vice-city', label: 'Vice City', title: 'VICE CITY', subtitle: 'SUMMER IN THE SUN', grade: 'sunset', wanted: false },
-  { id: 'heist-crew', label: 'Heist Crew', title: 'HEIST CREW', subtitle: 'EVERY SCORE HAS A PRICE', grade: 'heist', wanted: true },
-  { id: 'getaway', label: 'Getaway', title: 'GETAWAY', subtitle: 'TOP DOWN, FULL SEND', grade: 'ocean', wanted: true },
-  { id: 'neon-nights', label: 'Neon Nights', title: 'NEON NIGHTS', subtitle: 'OCEAN DRIVE AFTER DARK', grade: 'neon', wanted: false },
-  { id: 'wanted', label: 'Wanted', title: 'WANTED', subtitle: 'FIVE STARS AND COUNTING', grade: 'midnight', wanted: true },
-  { id: 'outlaw-run', label: 'Outlaw Run', title: 'OUTLAW RUN', subtitle: 'RIDE OR DIE IN VICE CITY', grade: 'sunset', wanted: false },
+  { id: 'vice-city', label: 'Vice City', title: 'VICE CITY', subtitle: 'Summer in the Sun', grade: 'sunset', wanted: false, tagline: 'ONE LAST SUMMER · NO WAY HOME', quote: 'SUNSET, SWEAT AND BAD DECISIONS', source: 'THE VICE HERALD' },
+  { id: 'heist-crew', label: 'Heist Crew', title: 'HEIST CREW', subtitle: 'Every Score Has a Price', grade: 'heist', wanted: true, tagline: 'FIVE MASKS · ONE VAULT · NO WITNESSES', quote: 'EVERY DOLLAR HAS A STORY', source: 'PALM CITY POST' },
+  { id: 'getaway', label: 'Getaway', title: 'GETAWAY', subtitle: 'Top Down, Full Send', grade: 'ocean', wanted: true, tagline: 'TOP DOWN · FULL SEND · NO BRAKES', quote: 'FULL THROTTLE FROM THE FIRST FRAME', source: 'SUNSET TRIBUNE' },
+  { id: 'neon-nights', label: 'Neon Nights', title: 'NEON NIGHTS', subtitle: 'Ocean Drive After Dark', grade: 'neon', wanted: false, tagline: 'THE NIGHT BELONGS TO US', quote: 'THE CITY GLOWS AFTER DARK', source: 'THE NEON REVIEW' },
+  { id: 'wanted', label: 'Wanted', title: 'WANTED', subtitle: 'Five Stars and Counting', grade: 'midnight', wanted: true, tagline: 'RUN FAST · SHINE BRIGHT · NEVER CAUGHT', quote: 'FIVE STARS AND STILL RUNNING', source: 'VICE CITY CHRONICLE' },
+  { id: 'outlaw-run', label: 'Outlaw Run', title: 'OUTLAW RUN', subtitle: 'Ride or Die in Vice City', grade: 'sunset', wanted: false, tagline: 'RIDE HARD · DIE FREE · VICE CITY', quote: 'NO BRAKES, NO REGRETS, NO WAY BACK', source: 'OCEAN DRIVE DAILY' },
 ];
+
+/** Default caption tag per built-in sample, in SAMPLE_PHOTOS order. */
+const SAMPLE_CAPTIONS = [
+  { mode: 'role', text: 'THE COURIER', show: true },
+  { mode: 'role', text: 'THE DRIVER', show: true },
+  { mode: 'role', text: 'THE COAST', show: true },
+  { mode: 'role', text: 'THE ANGLER', show: true },
+  { mode: 'role', text: 'THE HEIST', show: true },
+  { mode: 'role', text: 'THE GETAWAY', show: true },
+  { mode: 'role', text: 'THE DJ', show: true },
+  { mode: 'role', text: 'THE RIDER', show: true },
+];
+
+/** The caption a library photo carries when it lands in a panel. */
+function defaultCaptionFor(libraryIndex) {
+  const preset = SAMPLE_CAPTIONS[libraryIndex];
+  return preset ? { ...preset } : { mode: 'role', text: 'THE STAR', show: true };
+}
 
 /** The editor's whole state: one object the renderer reads. */
 const state = {
   layout: 'hero-strip',
   grade: 'sunset',
-  effects: { vignette: true, grain: true, halftone: false },
+  effects: { vignette: true, grain: true, halftone: true },
   title: 'VICE CITY',
-  subtitle: 'SUMMER IN THE SUN',
+  subtitle: 'Summer in the Sun',
   titleSize: 100,
   titlePos: 'bottom',
   titleColor: '#ffffff',
+  titleStyle: 'chrome',
   wanted: false,
+  furniture: {
+    on: true,
+    quote: 'SUNSET, SWEAT AND BAD DECISIONS',
+    source: 'THE VICE HERALD',
+    vol: 'VOL. 01',
+    tagline: 'ONE LAST SUMMER · NO WAY HOME',
+    billing: 'VICEFRAME · A VICEFRAME ORIGINAL · STARRING YOU · MADE OFFLINE IN YOUR BROWSER · PRINTED IN VICE CITY',
+  },
+  look: { paint: 25, halftone: 15, grain: 20, glow: 20 },
   sizeId: '1920x1080',
   selectedPanel: 0,
-  panels: [0, 1, 2, 3, 4, 5].map(() => ({ photo: null, zoom: 1, rot: 0, dx: 0, dy: 0 })),
+  panels: [0, 1, 2, 3, 4, 5, 6, 7, 8].map(() => ({ photo: null, zoom: 1, rot: 0, dx: 0, dy: 0, caption: { mode: 'role', text: '', show: false } })),
 };
 
 /** Every photo the editor knows: built-in samples first, uploads appended. */
@@ -157,7 +186,7 @@ function render() {
   }
 }
 
-/** Refresh the Selected panel section from the current panel's crop. */
+/** Refresh the Selected panel section from the current panel's crop and caption. */
 function refreshPanelControls() {
   const panel = state.panels[state.selectedPanel];
   const photo = panel.photo;
@@ -165,6 +194,15 @@ function refreshPanelControls() {
   $('panelLabel').textContent = `Panel ${state.selectedPanel + 1} — ${name}`;
   $('zoomInput').value = Math.round(panel.zoom * 100);
   $('rotateInput').value = Math.round(panel.rot);
+  const caption = panel.caption || { mode: 'role', text: '', show: false };
+  $('captionText').value = caption.text || '';
+  document.querySelectorAll('#captionModeBtns .seg-btn').forEach((el) => {
+    const active = !caption.show ? el.dataset.cmode === 'off' : el.dataset.cmode === caption.mode;
+    el.classList.toggle('is-active', active);
+  });
+  const presetSelect = $('captionPreset');
+  const known = [...presetSelect.options].some((opt) => opt.value === caption.text);
+  presetSelect.value = known && caption.text ? caption.text : 'custom';
 }
 
 function selectPanel(index) {
@@ -180,7 +218,7 @@ function assignPhotoToSelected(libraryIndex) {
   if (!entry) return;
   pickedPhoto = libraryIndex;
   const panelIndex = state.selectedPanel;
-  state.panels[panelIndex] = { photo: entry.image, ...defaultCrop() };
+  state.panels[panelIndex] = { photo: entry.image, ...defaultCrop(), caption: defaultCaptionFor(libraryIndex) };
   document.querySelectorAll('.thumb').forEach((el, i) => {
     el.classList.toggle('is-picked', i === libraryIndex);
   });
@@ -193,14 +231,15 @@ function assignPhotoToSelected(libraryIndex) {
 function fillAllPanels() {
   const entry = library[pickedPhoto];
   if (!entry) return;
-  state.panels = state.panels.map(() => ({ photo: entry.image, ...defaultCrop() }));
+  const caption = defaultCaptionFor(pickedPhoto);
+  state.panels = state.panels.map(() => ({ photo: entry.image, ...defaultCrop(), caption: { ...caption } }));
   refreshPanelControls();
   render();
   const count = (LAYOUTS[state.layout] || LAYOUTS['hero-strip']).panelCount;
   for (let i = 0; i < count; i++) faceCenterPhoto(i, entry.image);
 }
 
-/** Apply a title preset: caption, grade and wanted stars in one tap. */
+/** Apply a title preset: caption, tagline, quote, grade and wanted stars in one tap. */
 function applyPreset(presetId) {
   const preset = PRESETS.find((p) => p.id === presetId);
   if (!preset) return;
@@ -208,6 +247,9 @@ function applyPreset(presetId) {
   state.subtitle = preset.subtitle;
   state.grade = preset.grade;
   state.wanted = preset.wanted;
+  state.furniture.tagline = preset.tagline;
+  state.furniture.quote = preset.quote;
+  state.furniture.source = preset.source;
   syncControls();
   render();
 }
@@ -296,7 +338,19 @@ function syncControls() {
   document.querySelectorAll('#colorBtns .color-btn').forEach((el) => {
     el.classList.toggle('is-active', el.dataset.color === state.titleColor);
   });
+  document.querySelectorAll('#titleStyleBtns .seg-btn').forEach((el) => {
+    el.classList.toggle('is-active', el.dataset.tstyle === state.titleStyle);
+  });
   $('wantedChip').classList.toggle('is-on', !!state.wanted);
+  $('furnitureChip').classList.toggle('is-on', !!state.furniture.on);
+  $('quoteInput').value = state.furniture.quote;
+  $('quoteSourceInput').value = state.furniture.source;
+  $('taglineInput').value = state.furniture.tagline;
+  $('volInput').value = state.furniture.vol;
+  ['paint', 'halftone', 'grain', 'glow'].forEach((key) => {
+    $(`${key}Slider`).value = state.look[key];
+    $(`${key}Value`).textContent = state.look[key];
+  });
   refreshPanelControls();
 }
 
@@ -403,6 +457,71 @@ function wireControls() {
     $('wantedChip').classList.toggle('is-on', state.wanted);
     render();
   });
+  $('furnitureChip').addEventListener('click', () => {
+    state.furniture.on = !state.furniture.on;
+    $('furnitureChip').classList.toggle('is-on', state.furniture.on);
+    render();
+  });
+  $('quoteInput').addEventListener('input', (event) => {
+    state.furniture.quote = event.target.value;
+    render();
+  });
+  $('quoteSourceInput').addEventListener('input', (event) => {
+    state.furniture.source = event.target.value;
+    render();
+  });
+  $('taglineInput').addEventListener('input', (event) => {
+    state.furniture.tagline = event.target.value;
+    render();
+  });
+  $('volInput').addEventListener('input', (event) => {
+    state.furniture.vol = event.target.value;
+    render();
+  });
+  ['paint', 'halftone', 'grain', 'glow'].forEach((key) => {
+    $(`${key}Slider`).addEventListener('input', (event) => {
+      state.look[key] = Number(event.target.value);
+      $(`${key}Value`).textContent = state.look[key];
+      render();
+    });
+  });
+  document.querySelectorAll('#titleStyleBtns .seg-btn').forEach((el) => {
+    el.addEventListener('click', () => {
+      state.titleStyle = el.dataset.tstyle;
+      document.querySelectorAll('#titleStyleBtns .seg-btn').forEach((b) => {
+        b.classList.toggle('is-active', b === el);
+      });
+      render();
+    });
+  });
+  document.querySelectorAll('#captionModeBtns .seg-btn').forEach((el) => {
+    el.addEventListener('click', () => {
+      const panel = state.panels[state.selectedPanel];
+      const mode = el.dataset.cmode;
+      if (mode === 'off') {
+        panel.caption.show = false;
+      } else {
+        panel.caption.mode = mode;
+        panel.caption.show = true;
+      }
+      refreshPanelControls();
+      render();
+    });
+  });
+  $('captionText').addEventListener('input', (event) => {
+    const panel = state.panels[state.selectedPanel];
+    panel.caption.text = event.target.value;
+    render();
+  });
+  $('captionPreset').addEventListener('change', (event) => {
+    if (event.target.value === 'custom') return;
+    const panel = state.panels[state.selectedPanel];
+    panel.caption.text = event.target.value;
+    panel.caption.mode = 'role';
+    panel.caption.show = true;
+    refreshPanelControls();
+    render();
+  });
   $('titleInput').addEventListener('input', (event) => {
     state.title = event.target.value;
     render();
@@ -469,8 +588,9 @@ async function initEditor() {
   }
   // Default cover: neon street hero, boulevard / beach / pier in the strip.
   // The strip pans frame the faces, which sit near the top of those photos.
-  // Panels 5 and 6 (heist crew, getaway) wait for the six-panel comic grid.
-  const order = [0, 1, 2, 3, 4, 5];
+  // Panels 5–9 (heist crew, getaway, nightclub, biker, neon again) wait for
+  // the six-panel comic grid and the nine-panel Cover layout.
+  const order = [0, 1, 2, 3, 4, 5, 6, 7, 0];
   const defaultPans = [
     { dx: 0, dy: 0 },
     { dx: 0, dy: 0.35 },
@@ -478,20 +598,26 @@ async function initEditor() {
     { dx: 0, dy: 0.18 },
     { dx: 0, dy: 0 },
     { dx: 0, dy: 0 },
+    { dx: 0, dy: 0 },
+    { dx: 0, dy: 0.1 },
+    { dx: 0, dy: 0 },
   ];
   state.panels = state.panels.map((panel, i) => ({
     ...panel,
     photo: library[order[i]] ? library[order[i]].image : null,
     dx: defaultPans[i].dx,
     dy: defaultPans[i].dy,
+    caption: defaultCaptionFor(order[i]),
   }));
   rebuildThumbs();
   wireControls();
+  syncControls();
   refreshPanelControls();
   render();
-  // Re-render once the display font arrives so the lettering uses Anton.
+  // Re-render once the display fonts arrive so the lettering uses Anton and Pacifico.
   if (document.fonts && document.fonts.ready) {
     document.fonts.load('100px Anton').catch(() => {});
+    document.fonts.load('100px Pacifico').catch(() => {});
     document.fonts.ready.then(() => render());
   }
 }
